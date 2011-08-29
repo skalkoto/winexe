@@ -1,0 +1,43 @@
+import os
+from Configure import conf
+
+top = '.'
+out = 'build'
+samba = os.path.abspath('../samba')
+
+@conf
+def win32_program(self, *k, **kw):
+    kw['features'] = 'c cprogram'
+    kw['env'] = self.env.copy()
+    kw['env'].update({"CC": kw['cc'], "LINK_CC": kw['cc']})
+    return self(*k, **kw)
+
+def options(ctx):
+    ctx.load('compiler_c')
+
+def configure(ctx):
+    platform = ['mingw32', 'mingw32msvc']
+    ctx.find_program([ a + '-' + p + '-gcc' for a in ['i386', 'i586'] for p in platform], var='CC_WIN32')
+    ctx.find_program([ a + '-' + p + '-gcc' for a in ['x86_64', 'amd64'] for p in platform], var='CC_WIN64')
+    ctx.load('compiler_c')
+    os.system('cd ' + samba + ' && ./buildtools/bin/waf configure')
+    os.system('cd ' + samba + ' && grep -q "bld.RECURSE(\'../source\')" wscript_build || sed -i "s#bld.RECURSE(\'source3\')#bld.RECURSE(\'source3\')\\nbld.RECURSE(\'../source\')#" wscript_build')
+
+def build(bld):
+    if bld.env._SAMBA_BUILD_ == 4:
+        bld.SAMBA_BINARY (
+            binname='winexe',
+            source='winexe.c svcinstall.c async.c build/winexesvc32_exe.c build/winexesvc64_exe.c',
+            deps='POPT_SAMBA POPT_CREDENTIALS dcerpc')
+        return
+
+    bld.win32_program(target='winexesvc32.exe', source='winexesvc_launch.c winexesvc_loop.c', cc=bld.env.CC_WIN32)
+    bld.win32_program(target='winexesvc64.exe', source='winexesvc_launch.c winexesvc_loop.c', cc=bld.env.CC_WIN64)
+    bld.program(target='bin2c', source='bin2c.c', cflags='')
+
+    bld(rule='${SRC[0].abspath()} winexesvc32_exe ${SRC[1]} > ${TGT}', target='winexesvc32_exe.c', source='bin2c winexesvc32.exe')
+    bld(rule='${SRC[0].abspath()} winexesvc64_exe ${SRC[1]} > ${TGT}', target='winexesvc64_exe.c', source='bin2c winexesvc64.exe')
+
+    bld(rule='cd ' + samba + ' && ./buildtools/bin/waf build --targets=winexe && cp bin/winexe ${TGT[0].abspath()}',
+        target='winexe',
+        source='winexe.c svcinstall.c async.c winexesvc32_exe.c winexesvc64_exe.c')
