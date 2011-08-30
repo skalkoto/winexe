@@ -1,0 +1,13 @@
+After cloning the winexe tree, e.g.,
+
+    git://winexe.git.sourceforge.net/gitroot/winexe/winexe-waf
+
+also obtain the samba tree.
+
+    git submodule update --init samba
+
+Then configure and build.
+
+    cd source
+    ./waf configure
+    ./waf build
