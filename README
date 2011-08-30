@@ -1,3 +1,6 @@
+       README -- winexe with waf build system
+       --------------------------------------
+
 After cloning the winexe tree, e.g.,
 
     git://winexe.git.sourceforge.net/gitroot/winexe/winexe-waf
