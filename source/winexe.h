@@ -59,7 +59,6 @@ struct async_context {
 };
 
 int async_open(struct async_context *c, const char *fn, int open_mode);
-int async_read(struct async_context *c);
 int async_write(struct async_context *c, const void *buf, int len);
 int async_close(struct async_context *c);
 

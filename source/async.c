@@ -11,6 +11,8 @@
 
 #define USE_OPENX_CALL
 
+static int async_read(struct async_context *c);
+
 void list_enqueue(struct list *l, const void *data, int size)
 {
 	struct list_item *li =
@@ -135,7 +137,7 @@ static void async_close_recv(struct smbcli_request *req)
 		c->cb_close(c->cb_ctx);
 }
 
-int async_read(struct async_context *c)
+static int async_read(struct async_context *c)
 {
 	if (!c->io_read) {
 		c->io_read = talloc(c->tree, union smb_read);
