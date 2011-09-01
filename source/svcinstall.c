@@ -201,6 +201,8 @@ static NTSTATUS svc_CloseServiceHandle(struct dcerpc_binding_handle *binding_han
 static NTSTATUS svc_UploadService(struct tevent_context *ev_ctx, 
                            const char *hostname,
 			   const char *service_filename,
+			   unsigned char *svc32_exe, unsigned int svc32_exe_len,
+			   unsigned char *svc64_exe, unsigned int svc64_exe_len,
 			   struct cli_credentials * credentials, int flags)
 {
 	struct smb_composite_savefile *io;
@@ -232,12 +234,12 @@ static NTSTATUS svc_UploadService(struct tevent_context *ev_ctx,
 	}
 	if ((flags & SVC_OSCHOOSE && NT_STATUS_IS_OK(status)) || (flags & SVC_OS64BIT)) {
 		DEBUG(1, ("svc_UploadService: Installing 64bit %s\n", service_filename));
-		io->in.data = winexesvc64_exe;
-		io->in.size = winexesvc64_exe_len;
+		io->in.data = svc64_exe;
+		io->in.size = svc64_exe_len;
 	} else {
 		DEBUG(1, ("svc_UploadService: Installing 32bit %s\n", service_filename));
-		io->in.data = winexesvc32_exe;
-		io->in.size = winexesvc32_exe_len;
+		io->in.data = svc32_exe;
+		io->in.size = svc32_exe_len;
 	}
 	status = smb_composite_savefile(cli->tree, io);
 	NT_ERR(status, 1, "Failed to save ADMIN$/%s", io->in.fname);
@@ -250,6 +252,8 @@ static NTSTATUS svc_UploadService(struct tevent_context *ev_ctx,
 NTSTATUS svc_install(struct tevent_context *ev_ctx, 
                      const char *hostname,
 		     const char *service_name, const char *service_filename,
+		     unsigned char *svc32_exe, unsigned int svc32_exe_len,
+		     unsigned char *svc64_exe, unsigned int svc64_exe_len,
 		     struct cli_credentials * credentials, int flags)
 {
 	NTSTATUS status;
@@ -262,7 +266,10 @@ NTSTATUS svc_install(struct tevent_context *ev_ctx,
 	status = svc_pipe_connect(ev_ctx, &svc_pipe, hostname, credentials);
 	NT_ERR(status, 1, "Cannot connect to svcctl pipe");
 	binding_handle = svc_pipe->binding_handle;
-	status = svc_UploadService(ev_ctx, hostname, service_filename, credentials, flags);
+	status = svc_UploadService(ev_ctx, hostname, service_filename,
+				   svc32_exe, svc32_exe_len,
+				   svc64_exe, svc64_exe_len,
+				   credentials, flags);
 	NT_ERR(status, 1, "UploadService failed");
 	status = svc_OpenSCManager(binding_handle, hostname, &scm_handle);
 	NT_ERR(status, 1, "OpenSCManager failed");
