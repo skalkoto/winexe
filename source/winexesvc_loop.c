@@ -12,7 +12,7 @@
 #include <stdarg.h>
 #include <stdlib.h>
 
-#include "shared.h"
+#include "winexesvc.h"
 
 #define BUFSIZE 256
 

@@ -19,7 +19,7 @@
 
 #include "async.h"
 #include "svcinstall.h"
-#include "shared.h"
+#include "winexesvc.h"
 
 #define SERVICE_FILENAME SERVICE_NAME ".exe"
 

@@ -10,7 +10,7 @@
 #include <string.h>
 #include <stdarg.h>
 
-#include "shared.h"
+#include "winexesvc.h"
 
 #if 0
 static void SvcDebugOut(const char *a, int b)
