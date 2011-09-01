@@ -222,14 +222,14 @@ static void catch_alarm(int sig)
 	signal(sig, SIG_DFL);
 }
 
-static void timer(struct event_context *ev, struct timed_event *te, struct timeval t, void *private)
+static void timer_handler(struct tevent_context *ev, struct tevent_timer *te, struct timeval current_time, void *private_data)
 {
-	struct winexe_context *c = talloc_get_type(private, struct winexe_context);
+	struct winexe_context *c = talloc_get_type(private_data, struct winexe_context);
 	if (abort_requested) {
 		fprintf(stderr, "Aborting...\n");
 		async_write(c->ac_ctrl, "abort\n", 6);
 	} else
-		event_add_timed(c->tree->session->transport->socket->event.ctx, c, timeval_current_ofs(0, 10000), timer, c);
+		tevent_add_timer(c->tree->session->transport->socket->event.ctx, c, timeval_current_ofs(0, 10000), (tevent_timer_handler_t)timer_handler, c);
 }
 
 static void on_ctrl_pipe_open(struct winexe_context *c)
@@ -241,7 +241,7 @@ static void on_ctrl_pipe_open(struct winexe_context *c)
 	async_write(c->ac_ctrl, str, strlen(str));
 	signal(SIGINT, catch_alarm);
 	signal(SIGTERM, catch_alarm);
-	event_add_timed(c->tree->session->transport->socket->event.ctx, c, timeval_current_ofs(0, 10000), timer, c);
+	tevent_add_timer(c->tree->session->transport->socket->event.ctx, c, timeval_current_ofs(0, 10000), (tevent_timer_handler_t)timer_handler, c);
 }
 
 static void on_ctrl_pipe_read(struct winexe_context *c, const char *data, int len)
@@ -251,7 +251,7 @@ static void on_ctrl_pipe_read(struct winexe_context *c, const char *data, int le
 		DEBUG(1, ("CTRL: Recieved command: %.*s", len, data));
 		unsigned int npipe = strtoul(p, 0, 16);
 		char *fn;
-		// Open in
+		/* Open in */
 		c->ac_in = talloc_zero(c, struct async_context);
 		c->ac_in->tree = c->tree;
 		c->ac_in->cb_ctx = c;
@@ -259,7 +259,7 @@ static void on_ctrl_pipe_read(struct winexe_context *c, const char *data, int le
 		c->ac_in->cb_error = (async_cb_error) on_in_pipe_error;
 		fn = talloc_asprintf(c->ac_in, "\\pipe\\" PIPE_NAME_IN, npipe);
 		async_open(c->ac_in, fn, OPENX_MODE_ACCESS_RDWR);
-		// Open out
+		/* Open out */
 		c->ac_out = talloc_zero(c, struct async_context);
 		c->ac_out->tree = c->tree;
 		c->ac_out->cb_ctx = c;
@@ -267,7 +267,7 @@ static void on_ctrl_pipe_read(struct winexe_context *c, const char *data, int le
 		c->ac_out->cb_error = (async_cb_error) on_out_pipe_error;
 		fn = talloc_asprintf(c->ac_out, "\\pipe\\" PIPE_NAME_OUT, npipe);
 		async_open(c->ac_out, fn, OPENX_MODE_ACCESS_RDWR);
-		// Open err
+		/* Open err */
 		c->ac_err = talloc_zero(c, struct async_context);
 		c->ac_err->tree = c->tree;
 		c->ac_err->cb_ctx = c;
@@ -321,8 +321,9 @@ static void on_ctrl_pipe_close(struct winexe_context *c)
 	}
 }
 
-static void on_stdin_read_event(struct event_context *event_ctx,
-			     struct fd_event *fde, uint16_t flags,
+static void on_stdin_read_event(struct tevent_context *ev,
+			     struct tevent_fd *fde,
+			     uint16_t flags,
 			     struct winexe_context *c)
 {
 	char buf[256];
@@ -336,9 +337,9 @@ static void on_stdin_read_event(struct event_context *event_ctx,
 
 static void on_in_pipe_open(struct winexe_context *c)
 {
-	event_add_fd(c->tree->session->transport->socket->event.ctx,
-		     c->tree, 0, EVENT_FD_READ,
-		     (event_fd_handler_t) on_stdin_read_event, c);
+	tevent_add_fd(c->tree->session->transport->socket->event.ctx,
+		     c->tree, 0, TEVENT_FD_READ,
+		     (tevent_fd_handler_t) on_stdin_read_event, c);
 	struct termios term;
 	tcgetattr(0, &term);
 	term.c_lflag &= ~ICANON;
@@ -386,7 +387,7 @@ int main(int argc, char *argv[])
 
 	parse_args(argc, argv, &options);
 	DEBUG(1, (version_string, VERSION_MAJOR, VERSION_MINOR));
-	ev_ctx = s4_event_context_init(talloc_autofree_context());
+	ev_ctx = tevent_context_init(talloc_new(NULL));
 
 	dcerpc_init();
 
@@ -442,6 +443,6 @@ int main(int argc, char *argv[])
 	c->state = STATE_OPENING;
 	async_open(c->ac_ctrl, "\\pipe\\" PIPE_NAME, OPENX_MODE_ACCESS_RDWR);
 
-	event_loop_wait(cli_tree->session->transport->socket->event.ctx);
+	tevent_loop_wait(cli_tree->session->transport->socket->event.ctx);
 	return 0;
 }
