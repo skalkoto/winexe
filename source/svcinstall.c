@@ -31,9 +31,6 @@
 
 #include "svcinstall.h"
 
-#include "shared.h"
-#define SERVICE_NAME_DOT_EXE SERVICE_NAME ".exe"
-
 #define NT_ERR(status, lvl, args...) if (!NT_STATUS_IS_OK(status)) { DEBUG(lvl,("ERROR: " args)); DEBUG(lvl,(". %s.\n", nt_errstr(status))); return status; }
 #define NT_RES(status, werr) (NT_STATUS_IS_OK(status) ? werror_to_ntstatus(werr) : status)
 
@@ -203,6 +200,7 @@ static NTSTATUS svc_CloseServiceHandle(struct dcerpc_binding_handle *binding_han
 
 static NTSTATUS svc_UploadService(struct tevent_context *ev_ctx, 
                            const char *hostname,
+			   const char *service_filename,
 			   struct cli_credentials * credentials, int flags)
 {
 	struct smb_composite_savefile *io;
@@ -219,25 +217,25 @@ static NTSTATUS svc_UploadService(struct tevent_context *ev_ctx,
 				   lpcfg_socket_options(cmdline_lp_ctx), credentials, lpcfg_resolve_context(cmdline_lp_ctx), ev_ctx, &options, &session_options, lpcfg_gensec_settings(NULL, cmdline_lp_ctx));
 	NT_ERR(status, 1, "Failed to open ADMIN$ share");
 	if (flags & SVC_FORCE_UPLOAD) {
-		smbcli_unlink(cli->tree, SERVICE_NAME_DOT_EXE);
+		smbcli_unlink(cli->tree, service_filename);
 	} else {
-		int fd = smbcli_open(cli->tree, SERVICE_NAME_DOT_EXE, O_RDONLY, DENY_NONE);
+		int fd = smbcli_open(cli->tree, service_filename, O_RDONLY, DENY_NONE);
 		if (fd >= 0) {
 			smbcli_close(cli->tree, fd);
 			return status;
 		}
 	}
 	io = talloc_zero(cli->tree, struct smb_composite_savefile);
-	io->in.fname = SERVICE_NAME_DOT_EXE;
+	io->in.fname = service_filename;
 	if (flags & SVC_OSCHOOSE) {
 	    status = smbcli_chkpath(cli->tree, "SysWoW64");
 	}
 	if ((flags & SVC_OSCHOOSE && NT_STATUS_IS_OK(status)) || (flags & SVC_OS64BIT)) {
-		DEBUG(1, ("svc_UploadService: Installing 64bit " SERVICE_NAME_DOT_EXE "\n"));
+		DEBUG(1, ("svc_UploadService: Installing 64bit %s\n", service_filename));
 		io->in.data = winexesvc64_exe;
 		io->in.size = winexesvc64_exe_len;
 	} else {
-		DEBUG(1, ("svc_UploadService: Installing 32bit " SERVICE_NAME_DOT_EXE "\n"));
+		DEBUG(1, ("svc_UploadService: Installing 32bit %s\n", service_filename));
 		io->in.data = winexesvc32_exe;
 		io->in.size = winexesvc32_exe_len;
 	}
@@ -251,6 +249,7 @@ static NTSTATUS svc_UploadService(struct tevent_context *ev_ctx,
 /* Start, Creates, Install service if necccesary */
 NTSTATUS svc_install(struct tevent_context *ev_ctx, 
                      const char *hostname,
+		     const char *service_name, const char *service_filename,
 		     struct cli_credentials * credentials, int flags)
 {
 	NTSTATUS status;
@@ -263,18 +262,18 @@ NTSTATUS svc_install(struct tevent_context *ev_ctx,
 	status = svc_pipe_connect(ev_ctx, &svc_pipe, hostname, credentials);
 	NT_ERR(status, 1, "Cannot connect to svcctl pipe");
 	binding_handle = svc_pipe->binding_handle;
-	status = svc_UploadService(ev_ctx, hostname, credentials, flags);
+	status = svc_UploadService(ev_ctx, hostname, service_filename, credentials, flags);
 	NT_ERR(status, 1, "UploadService failed");
 	status = svc_OpenSCManager(binding_handle, hostname, &scm_handle);
 	NT_ERR(status, 1, "OpenSCManager failed");
-	status = svc_OpenService(binding_handle, &scm_handle, SERVICE_NAME,
+	status = svc_OpenService(binding_handle, &scm_handle, service_name,
 				 &svc_handle);
 	if (NT_STATUS_EQUAL(status, NT_STATUS_SERVICE_DOES_NOT_EXIST)) {
 		status =
-		    svc_CreateService(binding_handle, &scm_handle, SERVICE_NAME,
+		    svc_CreateService(binding_handle, &scm_handle, service_name,
 			SERVICE_WIN32_OWN_PROCESS | 
 			(flags & SVC_INTERACTIVE ? SERVICE_INTERACTIVE_PROCESS : 0),
-			SERVICE_NAME_DOT_EXE, &svc_handle);
+			service_filename, &svc_handle);
 		NT_ERR(status, 1, "CreateService failed");
 		need_start = 1;
 	} else if (NT_STATUS_IS_OK(status) && !(flags & SVC_IGNORE_INTERACTIVE)) {
@@ -329,6 +328,7 @@ NTSTATUS svc_install(struct tevent_context *ev_ctx,
 
 NTSTATUS svc_uninstall(struct tevent_context *ev_ctx,
 		       const char *hostname,
+		       const char *service_name, const char *service_filename,
 		       struct cli_credentials * credentials)
 {
 	NTSTATUS status;
@@ -349,7 +349,7 @@ NTSTATUS svc_uninstall(struct tevent_context *ev_ctx,
 	status = svc_OpenSCManager(binding_handle, hostname, &scm_handle);
 	NT_ERR(status, 1, "OpenSCManager failed");
 	status =
-	    svc_OpenService(binding_handle, &scm_handle, SERVICE_NAME,
+	    svc_OpenService(binding_handle, &scm_handle, service_name,
 			    &svc_handle);
 	NT_ERR(status, 1, "OpenService failed");
 	DEBUG(1, ("OpenService - %s\n", nt_errstr(status)));
@@ -385,8 +385,8 @@ NTSTATUS svc_uninstall(struct tevent_context *ev_ctx,
 	NT_ERR(status, 1, "Failed to open ADMIN$ share");
 	/* Give svc some time to exit */
 	smb_msleep(300);
-	status = smbcli_unlink(cli->tree, SERVICE_NAME_DOT_EXE);
-	DEBUG(1, ("Delete " SERVICE_NAME_DOT_EXE " - %s\n", nt_errstr(status)));
+	status = smbcli_unlink(cli->tree, service_filename);
+	DEBUG(1, ("Delete %s - %s\n", service_filename, nt_errstr(status)));
 	status = smbcli_tdis(cli);
 	DEBUG(1, ("Closing ADMIN$ - %s\n", nt_errstr(status)));
 	talloc_free(svc_pipe);
