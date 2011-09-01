@@ -28,6 +28,8 @@
 
 const char version_string[] = "winexe version %d.%02d\nThis program may be freely redistributed under the terms of the GNU GPLv3\n";
 
+static struct tevent_context *ev_ctx;
+
 struct program_options {
 	char *hostname;
 	char *cmd;
@@ -157,7 +159,7 @@ static void on_ctrl_pipe_error(struct winexe_context *c, int func, NTSTATUS stat
 	if (!activated
 	    && NT_STATUS_EQUAL(status, NT_STATUS_OBJECT_NAME_NOT_FOUND)) {
 		status =
-		    svc_install(c->args->hostname, c->args->credentials, c->args->flags);
+		    svc_install(ev_ctx, c->args->hostname, c->args->credentials, c->args->flags);
 		if (!NT_STATUS_IS_OK(status)) {
 			DEBUG(0,
 			      ("ERROR: Failed to install service winexesvc - %s\n",
@@ -294,8 +296,8 @@ static void on_ctrl_pipe_close(struct winexe_context *c)
 {
 	if (c->state == STATE_CLOSING_FOR_REINSTALL) {
 		DEBUG(1,("Reinstalling service\n"));
-		svc_uninstall(c->args->hostname, c->args->credentials);
-		svc_install(c->args->hostname, c->args->credentials, c->args->flags);
+		svc_uninstall(ev_ctx, c->args->hostname, c->args->credentials);
+		svc_install(ev_ctx, c->args->hostname, c->args->credentials, c->args->flags);
 		c->state = STATE_OPENING;
 		async_open(c->ac_ctrl, "\\pipe\\" PIPE_NAME, OPENX_MODE_ACCESS_RDWR);
 	}
@@ -354,11 +356,9 @@ static void on_err_pipe_error(struct winexe_context *c, int func, NTSTATUS statu
 static void exit_program(struct winexe_context *c)
 {
 	if (c->args->flags & SVC_UNINSTALL)
-		svc_uninstall(c->args->hostname, c->args->credentials);
+		svc_uninstall(ev_ctx, c->args->hostname, c->args->credentials);
 	exit(c->return_code);
 }
-
-struct tevent_context *ev_ctx;
 
 int main(int argc, char *argv[])
 {
@@ -373,10 +373,10 @@ int main(int argc, char *argv[])
 	dcerpc_init();
 
 	if (options.flags & SVC_FORCE_UPLOAD)
-		svc_uninstall(options.hostname, cmdline_credentials);
+		svc_uninstall(ev_ctx, options.hostname, cmdline_credentials);
 
 	if (!(options.flags & SVC_IGNORE_INTERACTIVE)) {
-		svc_install(options.hostname, cmdline_credentials, options.flags);
+		svc_install(ev_ctx, options.hostname, cmdline_credentials, options.flags);
 	}
 
 	struct smbcli_options smb_options;

@@ -37,7 +37,8 @@
 #define NT_ERR(status, lvl, args...) if (!NT_STATUS_IS_OK(status)) { DEBUG(lvl,("ERROR: " args)); DEBUG(lvl,(". %s.\n", nt_errstr(status))); return status; }
 #define NT_RES(status, werr) (NT_STATUS_IS_OK(status) ? werror_to_ntstatus(werr) : status)
 
-static NTSTATUS svc_pipe_connect(struct dcerpc_pipe **psvc_pipe,
+static NTSTATUS svc_pipe_connect(struct tevent_context *ev_ctx, 
+                          struct dcerpc_pipe **psvc_pipe,
 			  const char *hostname,
 			  struct cli_credentials *credentials)
 {
@@ -200,7 +201,8 @@ static NTSTATUS svc_CloseServiceHandle(struct dcerpc_binding_handle *binding_han
 	return status;
 }
 
-static NTSTATUS svc_UploadService(const char *hostname,
+static NTSTATUS svc_UploadService(struct tevent_context *ev_ctx, 
+                           const char *hostname,
 			   struct cli_credentials * credentials, int flags)
 {
 	struct smb_composite_savefile *io;
@@ -247,7 +249,8 @@ static NTSTATUS svc_UploadService(const char *hostname,
 }
 
 /* Start, Creates, Install service if necccesary */
-NTSTATUS svc_install(const char *hostname,
+NTSTATUS svc_install(struct tevent_context *ev_ctx, 
+                     const char *hostname,
 		     struct cli_credentials * credentials, int flags)
 {
 	NTSTATUS status;
@@ -257,10 +260,10 @@ NTSTATUS svc_install(const char *hostname,
 	struct policy_handle svc_handle;
 	int need_start;
 
-	status = svc_pipe_connect(&svc_pipe, hostname, credentials);
+	status = svc_pipe_connect(ev_ctx, &svc_pipe, hostname, credentials);
 	NT_ERR(status, 1, "Cannot connect to svcctl pipe");
 	binding_handle = svc_pipe->binding_handle;
-	status = svc_UploadService(hostname, credentials, flags);
+	status = svc_UploadService(ev_ctx, hostname, credentials, flags);
 	NT_ERR(status, 1, "UploadService failed");
 	status = svc_OpenSCManager(binding_handle, hostname, &scm_handle);
 	NT_ERR(status, 1, "OpenSCManager failed");
@@ -324,7 +327,8 @@ NTSTATUS svc_install(const char *hostname,
 	return status;
 }
 
-NTSTATUS svc_uninstall(const char *hostname,
+NTSTATUS svc_uninstall(struct tevent_context *ev_ctx,
+		       const char *hostname,
 		       struct cli_credentials * credentials)
 {
 	NTSTATUS status;
@@ -339,7 +343,7 @@ NTSTATUS svc_uninstall(const char *hostname,
 	lpcfg_smbcli_options(cmdline_lp_ctx, &options);
 	lpcfg_smbcli_session_options(cmdline_lp_ctx, &session_options);
 
-	status = svc_pipe_connect(&svc_pipe, hostname, credentials);
+	status = svc_pipe_connect(ev_ctx, &svc_pipe, hostname, credentials);
 	NT_ERR(status, 1, "Cannot connect to svcctl pipe");
 	binding_handle = svc_pipe->binding_handle;
 	status = svc_OpenSCManager(binding_handle, hostname, &scm_handle);
