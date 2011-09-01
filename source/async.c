@@ -7,7 +7,8 @@
 #include "includes.h"
 #include "libcli/libcli.h"
 #include "libcli/raw/raw_proto.h"
-#include "winexe.h"
+
+#include "async.h"
 
 #define USE_OPENX_CALL
 

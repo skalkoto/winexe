@@ -17,7 +17,8 @@
 #include "libcli/composite/composite.h"
 #include "auth/credentials/credentials.h"
 
-#include "winexe.h"
+#include "async.h"
+#include "svcinstall.h"
 #include "shared.h"
 
 #include <sys/fcntl.h>

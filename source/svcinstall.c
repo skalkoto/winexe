@@ -29,7 +29,7 @@
 #include "libcli/smb_composite/smb_composite.h"
 #include "lib/util/util.h"
 
-#include "winexe.h"
+#include "svcinstall.h"
 
 #include "shared.h"
 #define SERVICE_NAME_DOT_EXE SERVICE_NAME ".exe"
