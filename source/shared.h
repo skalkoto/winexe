@@ -4,6 +4,10 @@
    License: GNU General Public License version 3
 */
 
+/*
+ * Shared by winexe and winexesvc
+ */
+
 #define VERSION_MAJOR 1
 #define VERSION_MINOR 1
 
