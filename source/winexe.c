@@ -387,7 +387,7 @@ int main(int argc, char *argv[])
 
 	parse_args(argc, argv, &options);
 	DEBUG(1, (version_string, VERSION_MAJOR, VERSION_MINOR));
-	ev_ctx = tevent_context_init(talloc_new(NULL));
+	ev_ctx = s4_event_context_init(talloc_autofree_context());
 
 	dcerpc_init();
 
