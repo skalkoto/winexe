@@ -21,7 +21,7 @@ def configure(ctx):
     ctx.find_program([ a + '-' + p + '-gcc' for a in ['x86_64', 'amd64'] for p in platform], var='CC_WIN64')
     ctx.load('compiler_c')
     os.system('cd ' + samba + ' && grep -q "bld.RECURSE(\'../source\')" wscript_build || sed -i "s#bld.RECURSE(\'source3\')#bld.RECURSE(\'source3\')\\nbld.RECURSE(\'../source\')#" wscript_build')
-    os.system('cd ' + samba + ' && ./buildtools/bin/waf configure')
+    os.system('cd ' + samba + ' && ./buildtools/bin/waf configure --bundled-libraries=ALL')
 
 def build(bld):
     if bld.env._SAMBA_BUILD_ == 4:
