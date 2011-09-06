@@ -10,7 +10,6 @@
 #include "lib/cmdline/popt_common.h"
 #include "librpc/rpc/dcerpc.h"
 #include "librpc/gen_ndr/ndr_svcctl_c.h"
-#include "librpc/gen_ndr/ndr_security.h"
 #include "lib/events/events.h"
 //#define SERVICE_ALL_ACCESS (0xF01FF)
 #define SERVICE_NO_CHANGE (0xffffffff)
