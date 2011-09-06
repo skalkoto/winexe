@@ -389,8 +389,6 @@ int main(int argc, char *argv[])
 	DEBUG(1, (version_string, VERSION_MAJOR, VERSION_MINOR));
 	ev_ctx = s4_event_context_init(talloc_autofree_context());
 
-	dcerpc_init();
-
 	if (options.flags & SVC_FORCE_UPLOAD)
 		svc_uninstall(ev_ctx, options.hostname, SERVICE_NAME, SERVICE_FILENAME, cmdline_credentials);
 

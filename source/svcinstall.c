@@ -34,6 +34,16 @@
 #define NT_ERR(status, lvl, args...) if (!NT_STATUS_IS_OK(status)) { DEBUG(lvl,("ERROR: " args)); DEBUG(lvl,(". %s.\n", nt_errstr(status))); return status; }
 #define NT_RES(status, werr) (NT_STATUS_IS_OK(status) ? werror_to_ntstatus(werr) : status)
 
+static void svc_dcerpc_init_once()
+{
+	static int initialized = 0;
+
+	if (!initialized) {
+		dcerpc_init();
+		initialized = 1;
+	}
+}
+
 static NTSTATUS svc_pipe_connect(struct tevent_context *ev_ctx, 
                           struct dcerpc_pipe **psvc_pipe,
 			  const char *hostname,
@@ -43,6 +53,7 @@ static NTSTATUS svc_pipe_connect(struct tevent_context *ev_ctx,
 	char *binding;
 
 	asprintf(&binding, "ncacn_np:%s%s", hostname, DEBUGLVL(9)?"[print]":"");
+	svc_dcerpc_init_once();
 	status =
 	    dcerpc_pipe_connect(NULL, psvc_pipe, binding,
 				&ndr_table_svcctl, credentials, ev_ctx, cmdline_lp_ctx);
