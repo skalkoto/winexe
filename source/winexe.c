@@ -6,9 +6,6 @@
 
 #include "includes.h"
 #include "lib/cmdline/popt_common.h"
-#include "librpc/rpc/dcerpc.h"
-#include "librpc/gen_ndr/ndr_svcctl_c.h"
-#include "librpc/gen_ndr/ndr_security.h"
 #include "libcli/libcli.h"
 #include "lib/events/events.h"
 #include "param/param.h"
