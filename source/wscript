@@ -10,17 +10,17 @@ def options(ctx):
 
 def configure(ctx):
     # Configure winexe
-    ctx.find_program([ a + '-' + p + '-gcc' for a in ['i386', 'i586'] for p in ['mingw32', 'mingw32msvc'] ], var='CC_WIN32')
+    ctx.find_program([ a + '-' + p + '-gcc' for a in ['i386',   'i586' ] for p in ['mingw32', 'mingw32msvc'] ], var='CC_WIN32')
     ctx.find_program([ a + '-' + p + '-gcc' for a in ['x86_64', 'amd64'] for p in ['mingw32', 'mingw32msvc'] ], var='CC_WIN64')
     ctx.load('compiler_c')
 
-    # Patch Samba files
+    print "Patching Samba files"
+    # Don't include pyldb-util because we can't statically link it
     os.system('cd ' + samba + ' && sed -i "s/ pyldb-util / /" lib/ldb-samba/wscript_build')
+    # Patch Samba wscript to include this wscript in the samba waf build tree
+    os.system('cd ' + samba + ''' && grep -q "bld\.RECURSE('\.\./source') # added by winexe waf" wscript_build || sed -i "s^bld\.RECURSE('source3')^bld.RECURSE('source3')\\nbld.RECURSE('../source') # added by winexe waf^" wscript_build''')
 
-    # Add this file to the samba waf build tree
-    os.system('cd ' + samba + ' && grep -q "bld.RECURSE(\'../source\')" wscript_build || sed -i "s#bld.RECURSE(\'source3\')#bld.RECURSE(\'source3\')\\nbld.RECURSE(\'../source\')#" wscript_build')
-
-    print "Now chaining to samba waf configure"
+    print "Chaining to samba waf configure"
     os.system('cd ' + samba + ' && ./buildtools/bin/waf configure --bundled-libraries=ALL --nonshared-binary=winexe -C')
 
 @conf
