@@ -1,5 +1,5 @@
-       README -- winexe with waf build system
-       --------------------------------------
+README -- winexe with waf build system
+--------------------------------------
 
 After cloning the winexe tree, e.g.,
 
@@ -14,3 +14,13 @@ Then configure and build.
     cd source
     ./waf configure
     ./waf build
+
+Later, update the samba sources.
+
+    cd samba
+    git pull
+
+If you are a developer then edit stuff, commit and push.
+
+    commit -a
+    git push git+ssh://USERNAME@winexe.git.sourceforge.net/gitroot/winexe/winexe-waf
