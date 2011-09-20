@@ -377,7 +377,7 @@ static void exit_program(struct winexe_context *c)
 	if (c->args->flags & SVC_UNINSTALL)
 		svc_uninstall(ev_ctx, c->args->hostname,
 			      SERVICE_NAME, SERVICE_FILENAME,
-			      c->args->credentials
+			      c->args->credentials,
 			      cmdline_lp_ctx);
 	exit(c->return_code);
 }
