@@ -7,7 +7,6 @@
 #include "includes.h"
 #include "param/param.h"
 #include "libcli/resolve/resolve.h"
-#include "lib/cmdline/popt_common.h"
 #include "librpc/rpc/dcerpc.h"
 #include "librpc/gen_ndr/ndr_svcctl_c.h"
 #include "lib/events/events.h"
@@ -46,7 +45,8 @@ static void svc_dcerpc_init_once()
 static NTSTATUS svc_pipe_connect(struct tevent_context *ev_ctx, 
                           struct dcerpc_pipe **psvc_pipe,
 			  const char *hostname,
-			  struct cli_credentials *credentials)
+			  struct cli_credentials *credentials,
+			  struct loadparm_context *cllp_ctx)
 {
 	NTSTATUS status;
 	char *binding;
@@ -55,7 +55,7 @@ static NTSTATUS svc_pipe_connect(struct tevent_context *ev_ctx,
 	svc_dcerpc_init_once();
 	status =
 	    dcerpc_pipe_connect(NULL, psvc_pipe, binding,
-				&ndr_table_svcctl, credentials, ev_ctx, cmdline_lp_ctx);
+				&ndr_table_svcctl, credentials, ev_ctx, cllp_ctx);
 	free(binding);
 	return status;
 }
@@ -213,7 +213,9 @@ static NTSTATUS svc_UploadService(struct tevent_context *ev_ctx,
 			   const char *service_filename,
 			   unsigned char *svc32_exe, unsigned int svc32_exe_len,
 			   unsigned char *svc64_exe, unsigned int svc64_exe_len,
-			   struct cli_credentials * credentials, int flags)
+			   struct cli_credentials *credentials,
+			   struct loadparm_context *cllp_ctx,
+		           int flags)
 {
 	struct smb_composite_savefile *io;
 	struct smbcli_state *cli;
@@ -221,12 +223,12 @@ static NTSTATUS svc_UploadService(struct tevent_context *ev_ctx,
 	struct smbcli_options options;
 	struct smbcli_session_options session_options;
 
-	lpcfg_smbcli_options(cmdline_lp_ctx, &options);
-	lpcfg_smbcli_session_options(cmdline_lp_ctx, &session_options);
+	lpcfg_smbcli_options(cllp_ctx, &options);
+	lpcfg_smbcli_session_options(cllp_ctx, &session_options);
 
 	status =
-	    smbcli_full_connection(NULL, &cli, hostname, lpcfg_smb_ports(cmdline_lp_ctx), "ADMIN$", NULL,
-				   lpcfg_socket_options(cmdline_lp_ctx), credentials, lpcfg_resolve_context(cmdline_lp_ctx), ev_ctx, &options, &session_options, lpcfg_gensec_settings(NULL, cmdline_lp_ctx));
+	    smbcli_full_connection(NULL, &cli, hostname, lpcfg_smb_ports(cllp_ctx), "ADMIN$", NULL,
+				   lpcfg_socket_options(cllp_ctx), credentials, lpcfg_resolve_context(cllp_ctx), ev_ctx, &options, &session_options, lpcfg_gensec_settings(NULL, cllp_ctx));
 	NT_ERR(status, 1, "Failed to open ADMIN$ share");
 	if (flags & SVC_FORCE_UPLOAD) {
 		smbcli_unlink(cli->tree, service_filename);
@@ -264,7 +266,9 @@ NTSTATUS svc_install(struct tevent_context *ev_ctx,
 		     const char *service_name, const char *service_filename,
 		     unsigned char *svc32_exe, unsigned int svc32_exe_len,
 		     unsigned char *svc64_exe, unsigned int svc64_exe_len,
-		     struct cli_credentials * credentials, int flags)
+		     struct cli_credentials *credentials,
+		     struct loadparm_context *cllp_ctx,
+		     int flags)
 {
 	NTSTATUS status;
 	struct dcerpc_binding_handle *binding_handle;
@@ -273,13 +277,13 @@ NTSTATUS svc_install(struct tevent_context *ev_ctx,
 	struct policy_handle svc_handle;
 	int need_start;
 
-	status = svc_pipe_connect(ev_ctx, &svc_pipe, hostname, credentials);
+	status = svc_pipe_connect(ev_ctx, &svc_pipe, hostname, credentials, cllp_ctx);
 	NT_ERR(status, 1, "Cannot connect to svcctl pipe");
 	binding_handle = svc_pipe->binding_handle;
 	status = svc_UploadService(ev_ctx, hostname, service_filename,
 				   svc32_exe, svc32_exe_len,
 				   svc64_exe, svc64_exe_len,
-				   credentials, flags);
+				   credentials, cllp_ctx, flags);
 	NT_ERR(status, 1, "UploadService failed");
 	status = svc_OpenSCManager(binding_handle, hostname, &scm_handle);
 	NT_ERR(status, 1, "OpenSCManager failed");
@@ -346,7 +350,8 @@ NTSTATUS svc_install(struct tevent_context *ev_ctx,
 NTSTATUS svc_uninstall(struct tevent_context *ev_ctx,
 		       const char *hostname,
 		       const char *service_name, const char *service_filename,
-		       struct cli_credentials * credentials)
+		       struct cli_credentials *credentials,
+		       struct loadparm_context *cllp_ctx)
 {
 	NTSTATUS status;
 	struct dcerpc_binding_handle *binding_handle;
@@ -357,10 +362,10 @@ NTSTATUS svc_uninstall(struct tevent_context *ev_ctx,
 	struct smbcli_options options;
 	struct smbcli_session_options session_options;
 
-	lpcfg_smbcli_options(cmdline_lp_ctx, &options);
-	lpcfg_smbcli_session_options(cmdline_lp_ctx, &session_options);
+	lpcfg_smbcli_options(cllp_ctx, &options);
+	lpcfg_smbcli_session_options(cllp_ctx, &session_options);
 
-	status = svc_pipe_connect(ev_ctx, &svc_pipe, hostname, credentials);
+	status = svc_pipe_connect(ev_ctx, &svc_pipe, hostname, credentials, cllp_ctx);
 	NT_ERR(status, 1, "Cannot connect to svcctl pipe");
 	binding_handle = svc_pipe->binding_handle;
 	status = svc_OpenSCManager(binding_handle, hostname, &scm_handle);
@@ -397,8 +402,8 @@ NTSTATUS svc_uninstall(struct tevent_context *ev_ctx,
 
 	struct smbcli_state *cli;
 	status =
-	    smbcli_full_connection(NULL, &cli, hostname, lpcfg_smb_ports(cmdline_lp_ctx), "ADMIN$", NULL,
-				   lpcfg_socket_options(cmdline_lp_ctx), credentials, lpcfg_resolve_context(cmdline_lp_ctx), ev_ctx, &options, &session_options, lpcfg_gensec_settings(NULL, cmdline_lp_ctx));
+	    smbcli_full_connection(NULL, &cli, hostname, lpcfg_smb_ports(cllp_ctx), "ADMIN$", NULL,
+				   lpcfg_socket_options(cllp_ctx), credentials, lpcfg_resolve_context(cllp_ctx), ev_ctx, &options, &session_options, lpcfg_gensec_settings(NULL, cllp_ctx));
 	NT_ERR(status, 1, "Failed to open ADMIN$ share");
 	/* Give svc some time to exit */
 	smb_msleep(300);

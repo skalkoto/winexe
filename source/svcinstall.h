@@ -18,8 +18,11 @@ NTSTATUS svc_install(struct tevent_context *ev_ctx,
 		     const char *service_name, const char *service_filename,
 		     unsigned char *svc32_exe, unsigned int svc32_exe_len,
 		     unsigned char *svc64_exe, unsigned int svc64_exe_len,
-		     struct cli_credentials * credentials, int flags);
+		     struct cli_credentials *credentials,
+		     struct loadparm_context *cllp_ctx,
+		     int flags);
 NTSTATUS svc_uninstall(struct tevent_context *ev_ctx,
 		       const char *hostname,
 		       const char *service_name, const char *service_filename,
-		       struct cli_credentials * credentials);
+		       struct cli_credentials * credentials,
+		       struct loadparm_context *cllp_ctx);

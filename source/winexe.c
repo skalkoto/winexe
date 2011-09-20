@@ -170,7 +170,7 @@ static void on_ctrl_pipe_error(struct winexe_context *c, int func, NTSTATUS stat
 				SERVICE_NAME, SERVICE_FILENAME,
 				winexesvc32_exe, winexesvc32_exe_len,
 				winexesvc64_exe, winexesvc64_exe_len,
-				c->args->credentials, c->args->flags);
+				c->args->credentials, cmdline_lp_ctx, c->args->flags);
 		if (!NT_STATUS_IS_OK(status)) {
 			DEBUG(0,
 			      ("ERROR: Failed to install service winexesvc - %s\n",
@@ -307,12 +307,15 @@ static void on_ctrl_pipe_close(struct winexe_context *c)
 {
 	if (c->state == STATE_CLOSING_FOR_REINSTALL) {
 		DEBUG(1,("Reinstalling service\n"));
-		svc_uninstall(ev_ctx, c->args->hostname, SERVICE_NAME, SERVICE_FILENAME, c->args->credentials);
+		svc_uninstall(ev_ctx, c->args->hostname,
+			      SERVICE_NAME, SERVICE_FILENAME,
+			      c->args->credentials,
+			      cmdline_lp_ctx);
 		svc_install(ev_ctx, c->args->hostname,
 			    SERVICE_NAME, SERVICE_FILENAME,
 			    winexesvc32_exe, winexesvc32_exe_len,
 			    winexesvc64_exe, winexesvc64_exe_len,
-			    c->args->credentials, c->args->flags);
+			    c->args->credentials, cmdline_lp_ctx, c->args->flags);
 		c->state = STATE_OPENING;
 		async_open(c->ac_ctrl, "\\pipe\\" PIPE_NAME, OPENX_MODE_ACCESS_RDWR);
 	}
@@ -372,7 +375,10 @@ static void on_err_pipe_error(struct winexe_context *c, int func, NTSTATUS statu
 static void exit_program(struct winexe_context *c)
 {
 	if (c->args->flags & SVC_UNINSTALL)
-		svc_uninstall(ev_ctx, c->args->hostname, SERVICE_NAME, SERVICE_FILENAME, c->args->credentials);
+		svc_uninstall(ev_ctx, c->args->hostname,
+			      SERVICE_NAME, SERVICE_FILENAME,
+			      c->args->credentials
+			      cmdline_lp_ctx);
 	exit(c->return_code);
 }
 
@@ -387,14 +393,17 @@ int main(int argc, char *argv[])
 	ev_ctx = s4_event_context_init(talloc_autofree_context());
 
 	if (options.flags & SVC_FORCE_UPLOAD)
-		svc_uninstall(ev_ctx, options.hostname, SERVICE_NAME, SERVICE_FILENAME, cmdline_credentials);
+		svc_uninstall(ev_ctx, options.hostname,
+			      SERVICE_NAME, SERVICE_FILENAME,
+			      cmdline_credentials,
+			      cmdline_lp_ctx);
 
 	if (!(options.flags & SVC_IGNORE_INTERACTIVE)) {
 		svc_install(ev_ctx, options.hostname,
 			    SERVICE_NAME, SERVICE_FILENAME,
 			    winexesvc32_exe, winexesvc32_exe_len,
 			    winexesvc64_exe, winexesvc64_exe_len,
-			    cmdline_credentials, options.flags);
+			    cmdline_credentials, cmdline_lp_ctx, options.flags);
 	}
 
 	struct smbcli_options smb_options;
