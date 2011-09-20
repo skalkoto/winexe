@@ -18,8 +18,6 @@ def configure(ctx):
     print "Patching Samba files"
     # Don't include pyldb-util because we can't statically link it
     os.system('cd ' + sambapath + ' && sed -i "s/ pyldb-util / /" lib/ldb-samba/wscript_build')
-    # Patch Samba wscript to omit unneeded functions
-    os.system('cd ' + sambapath + ''' && grep -q "conf.ADD_CFLAGS('-ffunction-sections') # added by winexe waf" wscript || sed -i "s^\( *\)conf.env.toplevel_build = True^\\1conf.env.toplevel_build = True\\n\\1conf.ADD_CFLAGS('-ffunction-sections') # added by winexe waf\\n\\1conf.ADD_LDFLAGS('-Wl,--gc-sections') # added by winexe waf^" wscript''')
     # Patch Samba wscript_build to include this wscript in the Samba waf build tree
     os.system('cd ' + sambapath + ''' && grep -q "bld\.RECURSE('\.\./source') # added by winexe waf" wscript_build || sed -i "s^bld\.RECURSE('source3')^bld.RECURSE('source3')\\nbld.RECURSE('../source') # added by winexe waf^" wscript_build''')
 
@@ -42,8 +40,10 @@ def build(bld):
         # Create a Samba-waf task generator for winexe
         bld.SAMBA_BINARY (
             binname='winexe',
+            cflags='-ffunction-sections -I' + sambapath + '/lib/popt',
+            ldflags='-Wl,--gc-sections',
             source='winexe.c svcinstall.c async.c build/winexesvc32_exe.c build/winexesvc64_exe.c',
-            deps='POPT_SAMBA POPT_CREDENTIALS dcerpc')
+            deps='popt POPT_SAMBA POPT_CREDENTIALS dcerpc')
         return
 
     # Create task generators for winexe components
