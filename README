@@ -5,7 +5,7 @@ Instructions
 ------------
 After cloning the winexe tree, e.g.,
 
-    git://winexe.git.sourceforge.net/gitroot/winexe/winexe-waf
+    git clone git://winexe.git.sourceforge.net/gitroot/winexe/winexe-waf
 
 also obtain the samba tree.
 
@@ -27,16 +27,3 @@ If you are a developer then edit stuff, commit and push.
     commit -a
     git push git+ssh://USERNAME@winexe.git.sourceforge.net/gitroot/winexe/winexe-waf
 
-Issues
-------
-
-1. popt.h
-
-C header file popt.h is #included by lib/cmdline/popt_common.h which is
-#included by winexe.c.  A file by that name gets built at
-bin/default/include/public/samba/popt.h.  This file seems to be found
-and used during a bare Samba build, but for some reason it is not found
-during a winexe-waf build when Samba waf tries to compile "../source/winexe.c".
-
-A workaround is to make popt.h available on the system include path, e.g.,
-by installing the libpopt-dev package in Debian and Ubuntu.

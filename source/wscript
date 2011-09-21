@@ -40,10 +40,11 @@ def build(bld):
         # Create a Samba-waf task generator for winexe
         bld.SAMBA_BINARY (
             binname='winexe',
-            cflags='-ffunction-sections -I' + sambapath + '/lib/popt',
+            cflags='-ffunction-sections',
             ldflags='-Wl,--gc-sections',
+            includes='#lib/popt',
             source='winexe.c svcinstall.c async.c build/winexesvc32_exe.c build/winexesvc64_exe.c',
-            deps='popt POPT_SAMBA POPT_CREDENTIALS dcerpc')
+            deps='POPT_SAMBA POPT_CREDENTIALS dcerpc')
         return
 
     # Create task generators for winexe components
