@@ -27,3 +27,10 @@ If you are a developer then edit stuff, commit and push.
     commit -a
     git push git+ssh://USERNAME@winexe.git.sourceforge.net/gitroot/winexe/winexe-waf
 
+Credits
+-------
+Written by Andrzej Hajda <andrzej.hajda@wp.pl>
+
+License
+-------
+Please see the COPYING file for the text of the GNU GPL version 3.
