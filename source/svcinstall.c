@@ -25,7 +25,7 @@
 #include "system/filesys.h"
 #include "libcli/libcli.h"
 #include "libcli/smb_composite/smb_composite.h"
-#include "lib/util/util.h"
+#include "lib/util/samba_util.h"
 
 #include "svcinstall.h"
 
