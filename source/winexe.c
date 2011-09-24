@@ -5,11 +5,11 @@
 */
 
 #include "includes.h"
-#include "lib/cmdline/popt_common.h"
-#include "libcli/libcli.h"
-#include "lib/events/events.h"
 #include "param/param.h"
 #include "libcli/resolve/resolve.h"
+#include "lib/events/events.h"
+#include "lib/cmdline/popt_common.h"
+#include "libcli/libcli.h"
 #include "libcli/smb_composite/smb_composite.h"
 #include "libcli/composite/composite.h"
 #include "auth/credentials/credentials.h"

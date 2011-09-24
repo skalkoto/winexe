@@ -4,12 +4,20 @@
    License: GNU General Public License version 3
 */
 
+
 #include "includes.h"
+#include "system/filesys.h"
 #include "param/param.h"
 #include "libcli/resolve/resolve.h"
+#include "lib/events/events.h"
+#include "lib/util/samba_util.h"
+#include "libcli/libcli.h"
 #include "librpc/rpc/dcerpc.h"
 #include "librpc/gen_ndr/ndr_svcctl_c.h"
-#include "lib/events/events.h"
+#include "libcli/smb_composite/smb_composite.h"
+
+#include "svcinstall.h"
+
 //#define SERVICE_ALL_ACCESS (0xF01FF)
 #define SERVICE_NO_CHANGE (0xffffffff)
 #define SERVICE_INTERACTIVE_PROCESS (0x00000100)
@@ -22,12 +30,6 @@
 #define SERVICE_ERROR_NORMAL (0x00000001)
 #define SERVICE_CONTROL_STOP (0x00000001)
 #define NT_STATUS_SERVICE_DOES_NOT_EXIST NT_STATUS(0xc0000424)
-#include "system/filesys.h"
-#include "libcli/libcli.h"
-#include "libcli/smb_composite/smb_composite.h"
-#include "lib/util/samba_util.h"
-
-#include "svcinstall.h"
 
 #define NT_ERR(status, lvl, args...) if (!NT_STATUS_IS_OK(status)) { DEBUG(lvl,("ERROR: " args)); DEBUG(lvl,(". %s.\n", nt_errstr(status))); return status; }
 #define NT_RES(status, werr) (NT_STATUS_IS_OK(status) ? werror_to_ntstatus(werr) : status)
