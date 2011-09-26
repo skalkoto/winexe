@@ -9,7 +9,7 @@
 #include <sys/termios.h>
 #include <signal.h>
 
-#ifdef BUILD_AGAINST_SAMBA_TREE
+#ifdef USE_SAMBA_TREE_HEADERS
 #include "includes.h"
 #include "param/param.h"
 #include "libcli/resolve/resolve.h"

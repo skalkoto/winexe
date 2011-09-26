@@ -4,7 +4,7 @@
    License: GNU General Public License version 3
 */
 
-#ifdef BUILD_AGAINST_SAMBA_TREE
+#ifdef USE_SAMBA_TREE_HEADERS
 #include "includes.h"
 #include "libcli/libcli.h"
 #include "libcli/raw/raw_proto.h"

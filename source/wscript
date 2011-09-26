@@ -14,6 +14,7 @@ def configure(ctx):
     ctx.find_program([ a + '-' + p + '-gcc' for a in ['x86_64', 'amd64'] for p in ['mingw32', 'mingw32msvc'] ], var='CC_WIN64')
     ctx.find_program('strip', var='STRIP')
     ctx.load('compiler_c')
+    # Should also look for runtime files such as windows.h
 
     print "Patching Samba files"
     # Don't include pyldb-util because we can't statically link it
@@ -40,7 +41,7 @@ def build(bld):
         # Create a Samba-waf task generator for winexe
         bld.SAMBA_BINARY (
             binname='winexe',
-            cflags='-ffunction-sections -DBUILD_AGAINST_SAMBA_TREE',
+            cflags='-ffunction-sections -DUSE_SAMBA_TREE_HEADERS',
             ldflags='-Wl,--gc-sections',
             includes='#lib/popt',
             source='winexe.c svcinstall.c async.c build/winexesvc32_exe.c build/winexesvc64_exe.c',

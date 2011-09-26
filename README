@@ -37,3 +37,9 @@ Contributions by:
 License
 -------
 Please see the COPYING file for the text of the GNU GPL version 3.
+
+TODO
+----
+* In waf configure, should search for w32 runtime files like windows.h
+* A waf option should control whether or not winexe is built against
+  samba source tree headers or samba public API headers
