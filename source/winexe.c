@@ -19,19 +19,27 @@
 #include "libcli/smb_composite/smb_composite.h"
 #include "libcli/composite/composite.h"
 #include "auth/credentials/credentials.h"
+#define TEVENT_CONTEXT_INIT s4_event_context_init
 #else
 #include <string.h>
 #include <stdlib.h>
 #include <tevent.h>
 #include <samba-4.0/core/ntstatus.h>
+#include <samba-4.0/core/werror.h>
+#include <samba-4.0/util/data_blob.h>
+#include <samba-4.0/util/time.h>
+#include <samba-4.0/util/memory.h>
 #include <samba-4.0/param.h>
 #include <samba-4.0/samba/popt.h>
 #include <samba-4.0/smb_cliraw.h>
 #include <samba-4.0/credentials.h>
 // #includes still available only from Samba tree
+#include "param/param_proto.h"
 #include "libcli/resolve/resolve.h"
+#include "libcli/resolve/lp_proto.h"
 #include "libcli/smb_composite/smb_composite.h"
 #include "libcli/composite/composite.h"
+#define TEVENT_CONTEXT_INIT tevent_context_init
 #endif
 
 #include "async.h"
@@ -405,7 +413,7 @@ int main(int argc, char *argv[])
 
 	parse_args(argc, argv, &options);
 	DEBUG(1, (version_string, VERSION_MAJOR, VERSION_MINOR));
-	ev_ctx = s4_event_context_init(talloc_autofree_context());
+	ev_ctx = TEVENT_CONTEXT_INIT(talloc_autofree_context());
 
 	if (options.flags & SVC_FORCE_UPLOAD)
 		svc_uninstall(ev_ctx, options.hostname,
