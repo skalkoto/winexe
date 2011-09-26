@@ -4,7 +4,7 @@
    License: GNU General Public License version 3
 */
 
-
+#ifdef BUILD_AGAINST_SAMBA_TREE
 #include "includes.h"
 #include "system/filesys.h"
 #include "param/param.h"
@@ -15,6 +15,21 @@
 #include "librpc/rpc/dcerpc.h"
 #include "librpc/gen_ndr/ndr_svcctl_c.h"
 #include "libcli/smb_composite/smb_composite.h"
+#else
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <fcntl.h>
+#include <tevent.h>
+#include <samba-4.0/core/ntstatus.h>
+#include <samba-4.0/param.h>
+#include <samba-4.0/gen_ndr/ndr_svcctl_c.h>
+#include <samba-4.0/smb_cliraw.h>
+#include <samba-4.0/dcerpc.h>
+#include <samba-4.0/util.h>
+// resolve.h missing
+// smb_composite.h missing
+#endif
 
 #include "svcinstall.h"
 

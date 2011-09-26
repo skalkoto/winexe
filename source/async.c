@@ -4,9 +4,16 @@
    License: GNU General Public License version 3
 */
 
+#ifdef BUILD_AGAINST_SAMBA_TREE
 #include "includes.h"
 #include "libcli/libcli.h"
 #include "libcli/raw/raw_proto.h"
+#else
+#include <string.h>
+#include <talloc.h>
+#include <samba-4.0/core/ntstatus.h>
+#include <samba-4.0/smb_cliraw.h>
+#endif
 
 #include "async.h"
 

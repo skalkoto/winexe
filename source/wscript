@@ -40,7 +40,7 @@ def build(bld):
         # Create a Samba-waf task generator for winexe
         bld.SAMBA_BINARY (
             binname='winexe',
-            cflags='-ffunction-sections',
+            cflags='-ffunction-sections -DBUILD_AGAINST_SAMBA_TREE',
             ldflags='-Wl,--gc-sections',
             includes='#lib/popt',
             source='winexe.c svcinstall.c async.c build/winexesvc32_exe.c build/winexesvc64_exe.c',

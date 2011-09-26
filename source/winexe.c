@@ -4,6 +4,12 @@
    License: GNU General Public License version 3
 */
 
+#include <sys/fcntl.h>
+#include <sys/unistd.h>
+#include <sys/termios.h>
+#include <signal.h>
+
+#ifdef BUILD_AGAINST_SAMBA_TREE
 #include "includes.h"
 #include "param/param.h"
 #include "libcli/resolve/resolve.h"
@@ -13,6 +19,19 @@
 #include "libcli/smb_composite/smb_composite.h"
 #include "libcli/composite/composite.h"
 #include "auth/credentials/credentials.h"
+#else
+#include <string.h>
+#include <stdlib.h>
+#include <tevent.h>
+#include <samba-4.0/core/ntstatus.h>
+#include <samba-4.0/param.h>
+#include <samba-4.0/samba/popt.h>
+#include <samba-4.0/smb_cliraw.h>
+#include <samba-4.0/credentials.h>
+// resolve.h missing
+// smb_composite.h missing
+// composite.h missing
+#endif
 
 #include "async.h"
 #include "svcinstall.h"
@@ -27,11 +46,6 @@ extern unsigned char winexesvc32_exe[];
 /* winexesvc64_exe.c */
 extern unsigned int winexesvc64_exe_len;
 extern unsigned char winexesvc64_exe[];
-
-#include <sys/fcntl.h>
-#include <sys/unistd.h>
-#include <sys/termios.h>
-#include <signal.h>
 
 const char version_string[] = "winexe version %d.%02d\nThis program may be freely redistributed under the terms of the GNU GPLv3\n";
 
