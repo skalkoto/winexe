@@ -27,8 +27,9 @@
 #include <samba-4.0/smb_cliraw.h>
 #include <samba-4.0/dcerpc.h>
 #include <samba-4.0/util.h>
-// resolve.h missing
-// smb_composite.h missing
+// #includes still available only from Samba tree
+#include "libcli/resolve/resolve.h"
+#include "libcli/smb_composite/smb_composite.h"
 #endif
 
 #include "svcinstall.h"

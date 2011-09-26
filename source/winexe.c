@@ -28,9 +28,10 @@
 #include <samba-4.0/samba/popt.h>
 #include <samba-4.0/smb_cliraw.h>
 #include <samba-4.0/credentials.h>
-// resolve.h missing
-// smb_composite.h missing
-// composite.h missing
+// #includes still available only from Samba tree
+#include "libcli/resolve/resolve.h"
+#include "libcli/smb_composite/smb_composite.h"
+#include "libcli/composite/composite.h"
 #endif
 
 #include "async.h"
