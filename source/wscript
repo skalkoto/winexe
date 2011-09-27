@@ -55,6 +55,10 @@ def build(bld):
             source='winexe.c svcinstall.c async.c build/winexesvc32_exe.c build/winexesvc64_exe.c',
             deps='POPT_SAMBA POPT_CREDENTIALS dcerpc')
         return
+        # This fails if winexe has been compiled using public Samba headers.
+        # In the latter case we need to link winexe with public libraries,
+        # doing something somewhat equivalent to this:
+        #     ld -o winexe winexe_1.o svcinstall_1.o async_1.o build/winexesvc32_exe_1.o build/winexesvc64_exe_1.o -ltalloc -ltevent -ltdb -lldb -ldcerpc -lgensec -lregistry -lsamdb -lpopt -l:samba/liberrors.so -l:samba/libdcerpc-samba.so -l:samba/libcli-ldap.so -l:samba/ldb/ldbsamba_extensions.so
 
     # Create task generators for winexe components
     bld.windows_program(target='winexesvc32.exe', source='winexesvc_launch.c winexesvc_loop.c', cc=bld.env.CC_WIN32)
