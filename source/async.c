@@ -15,8 +15,8 @@
 #include <string.h>
 #include <stdint.h>
 #include <stdbool.h>
-#include <samba-4.0/util/ntstatus.h>
-#include <samba-4.0/util/werror.h>
+#include <samba-4.0/core/ntstatus.h>
+#include <samba-4.0/core/werror.h>
 #include <samba-4.0/util/data_blob.h>
 #include <samba-4.0/util/time.h>
 #include <samba-4.0/smb_cliraw.h>
