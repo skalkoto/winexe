@@ -7,8 +7,16 @@ sambapath = os.path.abspath('../samba')
 
 def options(ctx):
     ctx.load('compiler_c')
+    ctx.add_option('--use-samba-tree-headers', dest='use_samba_tree_headers', action='store_true', default=False, help='Use header files in ../samba rather than public Samba header files (default=False)')
 
 def configure(ctx):
+    winexe_build_header_filename = out + '/winexe_build.h'
+    if ctx.options.use_samba_tree_headers:
+        print('Using header files in Samba source tree')
+        os.system('echo "#define USE_SAMBA_TREE_HEADERS" > ' + winexe_build_header_filename)
+    else:
+        print('Using public Samba header files')
+        os.system('echo "" > ' + winexe_build_header_filename)
     # Configure winexe
     ctx.find_program([ a + '-' + p + '-gcc' for a in ['i386',   'i586' ] for p in ['mingw32', 'mingw32msvc'] ], var='CC_WIN32')
     ctx.find_program([ a + '-' + p + '-gcc' for a in ['x86_64', 'amd64'] for p in ['mingw32', 'mingw32msvc'] ], var='CC_WIN64')
@@ -41,7 +49,7 @@ def build(bld):
         # Create a Samba-waf task generator for winexe
         bld.SAMBA_BINARY (
             binname='winexe',
-            cflags='-ffunction-sections -DUSE_SAMBA_TREE_HEADERS',
+            cflags='-ffunction-sections',
             ldflags='-Wl,--gc-sections',
             includes='#lib/popt',
             source='winexe.c svcinstall.c async.c build/winexesvc32_exe.c build/winexesvc64_exe.c',
