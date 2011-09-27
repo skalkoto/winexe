@@ -30,7 +30,10 @@
 #include <samba-4.0/dcerpc.h>
 #include <samba-4.0/util.h>
 // #includes still available only from Samba tree
-#include "libcli/resolve/resolve.h"
+#include "param/param_proto.h"
+#include "lib/socket/socket.h"
+#include "libcli/resolve/lp_proto.h"
+#include "libcli/libcli.h"
 #include "libcli/smb_composite/smb_composite.h"
 #endif
 

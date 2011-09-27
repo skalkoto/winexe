@@ -37,10 +37,9 @@
 #include <samba-4.0/credentials.h>
 // #includes still available only from Samba tree
 #include "param/param_proto.h"
-#include "libcli/resolve/resolve.h"
+#include "lib/socket/socket.h"
 #include "libcli/resolve/lp_proto.h"
-#include "libcli/smb_composite/smb_composite.h"
-#include "libcli/composite/composite.h"
+#include "libcli/libcli.h"
 #define TEVENT_CONTEXT_INIT tevent_context_init
 #endif
 
