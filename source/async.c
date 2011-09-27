@@ -21,7 +21,7 @@
 #include <samba-4.0/util/time.h>
 #include <samba-4.0/smb_cliraw.h>
 #define DEBUG(x,y)
-#define DEBUGLVL(x)
+#define DEBUGLVL(x) 0
 #endif
 
 #include "async.h"

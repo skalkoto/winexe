@@ -42,7 +42,7 @@
 #include "libcli/libcli.h"
 #define TEVENT_CONTEXT_INIT tevent_context_init
 #define DEBUG(x,y)
-#define DEBUGLVL(x)
+#define DEBUGLVL(x) 0
 #endif
 
 #include "async.h"

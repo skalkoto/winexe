@@ -36,7 +36,7 @@
 #include "libcli/libcli.h"
 #include "libcli/smb_composite/smb_composite.h"
 #define DEBUG(x,y)
-#define DEBUGLVL(x)
+#define DEBUGLVL(x) 0
 #endif
 
 #include "svcinstall.h"
