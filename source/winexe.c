@@ -41,6 +41,8 @@
 #include "libcli/resolve/lp_proto.h"
 #include "libcli/libcli.h"
 #define TEVENT_CONTEXT_INIT tevent_context_init
+#define DEBUG(x,y)
+#define DEBUGLVL(x)
 #endif
 
 #include "async.h"

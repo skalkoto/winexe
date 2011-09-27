@@ -35,6 +35,8 @@
 #include "libcli/resolve/lp_proto.h"
 #include "libcli/libcli.h"
 #include "libcli/smb_composite/smb_composite.h"
+#define DEBUG(x,y)
+#define DEBUGLVL(x)
 #endif
 
 #include "svcinstall.h"
