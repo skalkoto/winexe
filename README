@@ -3,6 +3,10 @@ README -- winexe with waf build system
 
 Instructions
 ------------
+Install 32 and 64-bit cross-(to-Windows)-compilers.  E.g., on Ubuntu 11.10
+
+    sudo aptitude install gcc-mingw-w64
+
 After cloning the winexe tree, e.g.,
 
     git clone git://winexe.git.sourceforge.net/gitroot/winexe/winexe-waf
