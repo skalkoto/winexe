@@ -252,7 +252,7 @@ static void timer_handler(struct tevent_context *ev, struct tevent_timer *te, st
 		fprintf(stderr, "Aborting...\n");
 		async_write(c->ac_ctrl, "abort\n", 6);
 	} else
-		tevent_add_timer(c->tree->session->transport->socket->event.ctx, c, timeval_current_ofs(0, 10000), (tevent_timer_handler_t)timer_handler, c);
+		tevent_add_timer(c->tree->session->transport->ev, c, timeval_current_ofs(0, 10000), (tevent_timer_handler_t)timer_handler, c);
 }
 
 static void on_ctrl_pipe_open(struct winexe_context *c)
@@ -264,7 +264,7 @@ static void on_ctrl_pipe_open(struct winexe_context *c)
 	async_write(c->ac_ctrl, str, strlen(str));
 	signal(SIGINT, catch_alarm);
 	signal(SIGTERM, catch_alarm);
-	tevent_add_timer(c->tree->session->transport->socket->event.ctx, c, timeval_current_ofs(0, 10000), (tevent_timer_handler_t)timer_handler, c);
+	tevent_add_timer(c->tree->session->transport->ev, c, timeval_current_ofs(0, 10000), (tevent_timer_handler_t)timer_handler, c);
 }
 
 static void on_ctrl_pipe_read(struct winexe_context *c, const char *data, int len)
@@ -363,7 +363,7 @@ static void on_stdin_read_event(struct tevent_context *ev,
 
 static void on_in_pipe_open(struct winexe_context *c)
 {
-	tevent_add_fd(c->tree->session->transport->socket->event.ctx,
+	tevent_add_fd(c->tree->session->transport->ev,
 		     c->tree, 0, TEVENT_FD_READ,
 		     (tevent_fd_handler_t) on_stdin_read_event, c);
 	struct termios term;
@@ -473,6 +473,6 @@ int main(int argc, char *argv[])
 	c->state = STATE_OPENING;
 	async_open(c->ac_ctrl, "\\pipe\\" PIPE_NAME, OPENX_MODE_ACCESS_RDWR);
 
-	tevent_loop_wait(cli_tree->session->transport->socket->event.ctx);
+	tevent_loop_wait(cli_tree->session->transport->ev);
 	return 0;
 }
