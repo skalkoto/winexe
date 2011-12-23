@@ -1,4 +1,4 @@
-.TH WINEXE "1" "22 Dec 2011" "winexe" "winexe"
+.TH WINEXE "1" "23 Dec 2011" "winexe" "winexe"
 .SH NAME
 winexe \- execute a remote Windows command
 .SH SYNOPSIS
@@ -36,8 +36,8 @@ Uninstall the winexe service from the remote machine after using it to execute t
 .PP
 The
 .B winexe
-program is built on top of Samba 4 and offers many of the same options as other Samba 4 client programs including the following. For a description of these options see
-.BR smbclient (1).
+program is built on top of Samba 4 and offers many of the same options as other Samba 4 client programs including the following.
+For more information about these options see the Samba 4 documentation.
 
 Samba common options:
 .TP
@@ -72,10 +72,11 @@ Samba connection options:
 \fB\-n\fR, \fB\-\-netbiosname=\fR\fINETBIOSNAME\fR
 .TP
 \fB\-S\fR, \fB\-\-signing=\fRon|off|required
+Set the client signing state.
 .TP
 \fB\-W\fR, \fB\-\-workgroup=\fR\fIWORKGROUP\fR
 .TP
-\fB\-\-realm=\fR\fIREALM\fR
+\fB\-\-realm=\fR\fIDOMAINNAME\fR
 .TP
 \fB\-i\fR, \fB\-\-scope=\fR\fISCOPE\fR
 .TP
@@ -90,12 +91,21 @@ Samba authentication options:
 \fB\-\-password=\fR\fIPASSPHRASE\fR
 .TP
 \fB\-A\fR, \fB\-\-authentication\-file=\fR\fIFILENAME\fR
+Get the credentials from file named FILENAME.
 .TP
 \fB\-P\fR, \fB\-\-machine\-pass\fR
+Use stored machine account password.
 .TP
 \fB\-\-simple\-bind\-dn=\fR\fIDN\fR
 .TP
 \fB\-k\fR, \fB\-\-kerberos=\fR\fISTRING\fR
+Use kerberos authentication.
+.TP
+\fB\-e\fR, \fB\-\-encrypt\fR
+Encrypt SMB transport (UNIX extended servers only).
+.TP
+\fB\-C\fR, \fB\-\-use\-ccache\fR
+Use the winbind ccache for authentication.
 .SH ENVIRONMENT VARIABLES
 TODO
 .SH FILES
