@@ -1,0 +1,111 @@
+.TH WINEXE "1" "22 Dec 2011" "winexe" "winexe"
+.SH NAME
+winexe \- execute a remote Windows command
+.SH SYNOPSIS
+.B winexe
+[\fIOPTION\fR]... //\fIHOST\fR \fICOMMAND\fR
+.SH DESCRIPTION
+Execute COMMAND on remote Windows HOST.
+.SH OPTIONS
+Options specific to
+.B winexe
+are as follows.
+.TP
+\fB\-\-interactive=\fR0|1
+Allow (1) or disallow (0) interative mode.
+Windows Vista does not support interactive mode.
+.TP
+\fB\-\-ostype=\fR0|1|2
+Install 32-bit (0); 64-bit (1); or automatically chosen (2) version of the winexe service.
+.TP
+\fB\-\-reinstall\fR
+Uninstall the winexe service from the remote machine and install it again before using it to execute the command.
+.TP
+\fB\-\-runas=\fR[\fIDOMAIN\fR/]\fIUSERNAME\fR[%\fIPASSWORD\fR]
+Run as the given user.
+Beware: the password it sent in cleartext!
+.TP
+\fB\-\-runas\-file=\fR\fIFILE\fR
+Run as the user given in \fIFILE\fR.
+.TP
+\fB\-\-system\fR
+Use the SYSTEM account.
+.TP
+\fB\-\-uninstall\fR
+Uninstall the winexe service from the remote machine after using it to execute the command.
+.PP
+The
+.B winexe
+program is built on top of Samba 4 and offers many of the same options as other Samba 4 client programs including the following. For a description of these options see
+.BR smbclient (1).
+
+Samba common options:
+.TP
+\fB\-?\fR, \fB\-\-help\fR
+Print a somewhat verbose usage description.
+.TP
+\fB\-\-usage\fR
+Print a brief synopsis of command usage.
+.TP
+\fB\-d\fR, \fB\-\-debuglevel=\fR\fIDEBUGLEVEL\fR
+.TP
+\fB\-\-debug\-stderr
+.TP
+\fB\-s\fR, \fB\-\-configfile=\fR\fICONFIGFILE\fR
+.TP
+\fB\-\-option=\fR\fINAME=\fR\fIVALUE\fR
+.TP
+\fB\-\-leak\-report\fR
+.TP
+\fB\-\-leak\-report\-full\fR
+.TP
+\fB\-l\fR, \fB\-\-log\-basename=\fR\fILOGFILEBASE\fR
+.TP
+\fB\-V\fR, \fB\-\-version\fR
+.PP
+Samba connection options:
+.TP
+\fB\-R\fR, \fB\-\-name\-resolve=\fR\fINAME\-RESOLVE\-ORDER\fR
+.TP
+\fB\-O\fR, \fB\-\-socket\-options=\fR\fISOCKETOPTIONS\fR
+.TP
+\fB\-n\fR, \fB\-\-netbiosname=\fR\fINETBIOSNAME\fR
+.TP
+\fB\-S\fR, \fB\-\-signing=\fRon|off|required
+.TP
+\fB\-W\fR, \fB\-\-workgroup=\fR\fIWORKGROUP\fR
+.TP
+\fB\-\-realm=\fR\fIREALM\fR
+.TP
+\fB\-i\fR, \fB\-\-scope=\fR\fISCOPE\fR
+.TP
+\fB\-m\fR, \fB\-\-maxprotocol=\fR\fIMAXPROTOCOL\fR
+.PP
+Samba authentication options:
+.TP
+\fB\-U\fR, \fB\-\-user=\fR[\fIDOMAIN\fR/]\fIUSERNAME\fR[%\fIPASSWORD\fR]
+.TP
+\fB\-N\fR, \fB\-\-no\-pass\fR
+.TP
+\fB\-\-password=\fR\fIPASSPHRASE\fR
+.TP
+\fB\-A\fR, \fB\-\-authentication\-file=\fR\fIFILENAME\fR
+.TP
+\fB\-P\fR, \fB\-\-machine\-pass\fR
+.TP
+\fB\-\-simple\-bind\-dn=\fR\fIDN\fR
+.TP
+\fB\-k\fR, \fB\-\-kerberos=\fR\fISTRING\fR
+.SH ENVIRONMENT VARIABLES
+TODO
+.SH FILES
+TODO
+.SH AUTHOR
+This manual page was Written by Thomas Hood <jdthood@gmail.com>.
+.SH COPYRIGHT
+Copyright © 2011 Thomas Hood
+.br
+This is free software; see the source for copying conditions.  There is NO
+warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+.SH "SEE ALSO"
+.BR ssh (5).
