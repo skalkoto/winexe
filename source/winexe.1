@@ -53,7 +53,7 @@ Print a brief synopsis of command usage.
 .TP
 \fB\-s\fR, \fB\-\-configfile=\fR\fICONFIGFILE\fR
 .TP
-\fB\-\-option=\fR\fINAME=\fR\fIVALUE\fR
+\fB\-\-option=\fR\fINAME\fR=\fIVALUE\fR
 .TP
 \fB\-\-leak\-report\fR
 .TP
@@ -101,11 +101,13 @@ Use stored machine account password.
 \fB\-k\fR, \fB\-\-kerberos=\fR\fISTRING\fR
 Use kerberos authentication.
 .TP
+\fB\-\-krb-ccache=\fR\fISTRING\fR
+.TP
+\fB\-S\fR, \fB\-\-sign\fR
+(BUG: -S occurs twice --- not clear which one is correct)
+.TP
 \fB\-e\fR, \fB\-\-encrypt\fR
 Encrypt SMB transport (UNIX extended servers only).
-.TP
-\fB\-C\fR, \fB\-\-use\-ccache\fR
-Use the winbind ccache for authentication.
 .SH ENVIRONMENT VARIABLES
 TODO
 .SH FILES
