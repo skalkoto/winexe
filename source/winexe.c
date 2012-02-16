@@ -59,7 +59,7 @@ extern unsigned char winexesvc32_exe[];
 extern unsigned int winexesvc64_exe_len;
 extern unsigned char winexesvc64_exe[];
 
-const char version_string[] = "winexe version %d.%02d\nThis program may be freely redistributed under the terms of the GNU GPLv3\n";
+static const char version_message_fmt[] = "winexe version %d.%02d\nThis program may be freely redistributed under the terms of the GNU GPLv3\n";
 
 static struct tevent_context *ev_ctx;
 
@@ -117,7 +117,7 @@ static void parse_args(int argc, char *argv[], struct program_options *options)
 	poptSetOtherOptionHelp(pc, "//host command");
 
 	while ((opt = poptGetNextOpt(pc)) != -1) {
-		DEBUG(0, (version_string, VERSION_MAJOR, VERSION_MINOR));
+		DEBUG(0, (version_message_fmt, VERSION_MAJOR, VERSION_MINOR));
 		poptPrintUsage(pc, stdout, 0);
 		exit(1);
 	}
@@ -134,7 +134,7 @@ static void parse_args(int argc, char *argv[], struct program_options *options)
 
 	if (argc_new != 2 || argv_new[0][0] != '/'
 	    || argv_new[0][1] != '/') {
-		DEBUG(0, (version_string, VERSION_MAJOR, VERSION_MINOR));
+		DEBUG(0, (version_message_fmt, VERSION_MAJOR, VERSION_MINOR));
 		poptPrintUsage(pc, stdout, 0);
 		exit(1);
 	}
@@ -415,7 +415,7 @@ int main(int argc, char *argv[])
 	struct program_options options;
 
 	parse_args(argc, argv, &options);
-	DEBUG(1, (version_string, VERSION_MAJOR, VERSION_MINOR));
+	DEBUG(1, (version_message_fmt, VERSION_MAJOR, VERSION_MINOR));
 	ev_ctx = TEVENT_CONTEXT_INIT(talloc_autofree_context());
 
 	if (options.flags & SVC_FORCE_UPLOAD)
