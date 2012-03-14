@@ -37,8 +37,6 @@
 #include <samba-4.0/smb_cliraw.h>
 #include <samba-4.0/smb_cli.h>
 #include <samba-4.0/credentials.h>
-// #includes still available only from Samba tree
-#include "lib/socket/socket.h"
 #define TEVENT_CONTEXT_INIT tevent_context_init
 #define DEBUG(x,y)
 #define DEBUGLVL(x) 0

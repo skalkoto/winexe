@@ -31,7 +31,6 @@
 #include <samba-4.0/smb_cli.h>
 #include <samba-4.0/samba_util.h>
 // #includes still available only from Samba tree
-#include "lib/socket/socket.h"
 #include "libcli/smb_composite/smb_composite.h"
 #define DEBUG(x,y)
 #define DEBUGLVL(x) 0
