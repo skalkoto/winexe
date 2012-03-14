@@ -13,6 +13,7 @@ After cloning the winexe tree, e.g.,
 
 also obtain the samba tree.
 
+    cd winexe-waf
     git submodule update --init samba
 
 Then configure and build.
