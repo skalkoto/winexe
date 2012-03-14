@@ -26,13 +26,13 @@
 #include <samba-4.0/core/ntstatus.h>
 #include <samba-4.0/param.h>
 #include <samba-4.0/gen_ndr/ndr_svcctl_c.h>
-#include <samba-4.0/smb_cliraw.h>
 #include <samba-4.0/dcerpc.h>
+#include <samba-4.0/smb_cliraw.h>
+#include <samba-4.0/smb_cli.h>
 #include <samba-4.0/samba_util.h>
 // #includes still available only from Samba tree
 #include "param/param_proto.h"
 #include "lib/socket/socket.h"
-#include "libcli/resolve/lp_proto.h"
 #include "libcli/libcli.h"
 #include "libcli/smb_composite/smb_composite.h"
 #define DEBUG(x,y)
