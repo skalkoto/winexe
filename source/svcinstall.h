@@ -27,8 +27,7 @@ NTSTATUS svc_uninstall(struct tevent_context *ev_ctx,
 		       struct cli_credentials * credentials,
 		       struct loadparm_context *cllp_ctx);
 
-
-/*** EXTRA STUFF COPIED FROM SAMBA SOURCES ***/
+#ifndef USE_SAMBA_TREE_HEADERS
 
 typedef struct composite_context *(*resolve_name_send_fn)(TALLOC_CTX *mem_ctx,
 							  struct tevent_context *,
@@ -51,8 +50,6 @@ struct resolve_context {
 	} *methods;
 };
 
-struct resolve_context *resolve_context_init(TALLOC_CTX *mem_ctx);
-
-const char **lpcfg_name_resolve_order(struct loadparm_context *);
-
 struct resolve_context *lpcfg_resolve_context(struct loadparm_context *lp_ctx);
+
+#endif

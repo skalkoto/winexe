@@ -30,10 +30,19 @@
 #include <samba-4.0/smb_cliraw.h>
 #include <samba-4.0/smb_cli.h>
 #include <samba-4.0/samba_util.h>
-// #includes still available only from Samba tree
-#include "libcli/smb_composite/smb_composite.h"
 #define DEBUG(x,y)
 #define DEBUGLVL(x) 0
+
+struct smb_composite_savefile {
+	struct {
+		const char *fname;
+		uint8_t *data;
+		uint32_t size;
+	} in;
+};
+
+NTSTATUS smb_composite_savefile(struct smbcli_tree *tree,
+				struct smb_composite_savefile *io);
 #endif
 
 #include "svcinstall.h"
