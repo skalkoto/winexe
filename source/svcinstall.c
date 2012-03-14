@@ -28,7 +28,7 @@
 #include <samba-4.0/gen_ndr/ndr_svcctl_c.h>
 #include <samba-4.0/smb_cliraw.h>
 #include <samba-4.0/dcerpc.h>
-#include <samba-4.0/util.h>
+#include <samba-4.0/samba_util.h>
 // #includes still available only from Samba tree
 #include "param/param_proto.h"
 #include "lib/socket/socket.h"
