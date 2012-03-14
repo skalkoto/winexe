@@ -18,8 +18,6 @@
 #include "lib/events/events.h"
 #include "lib/cmdline/popt_common.h"
 #include "libcli/libcli.h"
-#include "libcli/smb_composite/smb_composite.h"
-#include "libcli/composite/composite.h"
 #include "auth/credentials/credentials.h"
 #define TEVENT_CONTEXT_INIT s4_event_context_init
 #else
