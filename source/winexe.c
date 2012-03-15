@@ -89,7 +89,6 @@ static void parse_args(int argc, char *argv[], struct program_options *options)
 		POPT_COMMON_SAMBA
 		POPT_COMMON_CONNECTION
 		POPT_COMMON_CREDENTIALS
-		POPT_COMMON_VERSION
 		{"uninstall", 0, POPT_ARG_NONE, &flag_uninstall, 0,
 		 "Uninstall winexe service after remote execution", NULL},
 		{"reinstall", 0, POPT_ARG_NONE, &flag_reinstall, 0,
