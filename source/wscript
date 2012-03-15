@@ -10,14 +10,25 @@ def options(ctx):
     ctx.add_option('--use-samba-tree-headers', dest='use_samba_tree_headers', action='store_true', default=False, help='Use header files in ../samba rather than public Samba header files (default=False)')
 
 def configure(ctx):
+    ctx.env.use_samba_tree_headers = ctx.options.use_samba_tree_headers
     # Create header file to control how winexe gets built
     f = open(out + '/winexe_build.h', 'w')
     if ctx.options.use_samba_tree_headers:
         print('Using header files in Samba source tree')
         f.write('#define USE_SAMBA_TREE_HEADERS\n')
+        print "Patching Samba files"
+        # Don't include pyldb-util because we can't statically link it
+        os.system('cd ' + sambapath + ' && sed -i "s/ pyldb-util / /" lib/ldb-samba/wscript_build')
+        # Patch Samba wscript_build to include this wscript in the Samba waf build tree
+        os.system('cd ' + sambapath + ''' && grep -q "bld\.RECURSE('\.\./source') # added by winexe waf" wscript_build || sed -i "s^bld\.RECURSE('source3')^bld.RECURSE('source3')\\nbld.RECURSE('../source') # added by winexe waf^" wscript_build''')
+        print "Chaining to Samba waf configure"
+        os.system('cd ' + sambapath + ' && ./buildtools/bin/waf configure --bundled-libraries=ALL --nonshared-binary=winexe -C')
     else:
         print('Using public Samba header files')
         f.write('// Use public Samba header files\n')
+        ctx.env.LIBPATH_SAMBA = ['/usr/lib/i386-linux-gnu/samba']
+        ctx.env.LIB_SAMBA = ['smbclient-raw', 'errors', 'talloc', 'dcerpc', 'dcerpc-samba', 'cli-ldap', 'popt']
+        ctx.env.INCLUDES_SAMBA = ['/usr/include/samba-4.0']
     f.close()
     # Configure winexe
     ctx.find_program([ a + '-' + p + '-gcc' for a in ['i386', 'i586', 'i686' ] for p in ['mingw32', 'mingw32msvc', 'w64-mingw32'] ], var='CC_WIN32')
@@ -26,18 +37,9 @@ def configure(ctx):
     ctx.load('compiler_c')
     # Should also look for runtime files such as windows.h
 
-    print "Patching Samba files"
-    # Don't include pyldb-util because we can't statically link it
-    os.system('cd ' + sambapath + ' && sed -i "s/ pyldb-util / /" lib/ldb-samba/wscript_build')
-    # Patch Samba wscript_build to include this wscript in the Samba waf build tree
-    os.system('cd ' + sambapath + ''' && grep -q "bld\.RECURSE('\.\./source') # added by winexe waf" wscript_build || sed -i "s^bld\.RECURSE('source3')^bld.RECURSE('source3')\\nbld.RECURSE('../source') # added by winexe waf^" wscript_build''')
-
-    print "Chaining to Samba waf configure"
-    os.system('cd ' + sambapath + ' && ./buildtools/bin/waf configure --bundled-libraries=ALL --nonshared-binary=winexe -C')
-
 @conf
 def windows_program(self, *k, **kw):
-    '''Create task generator for compiling a Windows program
+    '''creates task generator for compiling a Windows program
     Set keyword argument cc to the name of the compiler to use.
     '''
     kw['features'] = 'c cprogram'
@@ -71,7 +73,14 @@ def build(bld):
     bld(rule='${SRC[0].abspath()} winexesvc32_exe ${SRC[1]} > ${TGT}', target='winexesvc32_exe.c', source='bin2c winexesvc32.exe')
     bld(rule='${SRC[0].abspath()} winexesvc64_exe ${SRC[1]} > ${TGT}', target='winexesvc64_exe.c', source='bin2c winexesvc64.exe')
 
-    # Create a task generator for winexe (including hunks of Samba)
-    bld(rule='cd ' + sambapath + ' && ./buildtools/bin/waf build --targets=winexe && cp -p bin/winexe ${TGT[0].abspath()} && ${STRIP} ${TGT[0].abspath()}',
-        target='winexe',
-        source='winexe.c svcinstall.c async.c winexesvc32_exe.c winexesvc64_exe.c')
+    if bld.env.use_samba_tree_headers:
+        # Create a task generator for winexe (including hunks of Samba)
+        bld(rule='cd ' + sambapath + ' && ./buildtools/bin/waf build --targets=winexe && cp -p bin/winexe ${TGT[0].abspath()} && ${STRIP} ${TGT[0].abspath()}',
+            target='winexe',
+            source='winexe.c svcinstall.c async.c winexesvc32_exe.c winexesvc64_exe.c')
+    else:
+        # Create a task generator for winexe
+        bld.program(target='winexe',
+            source='winexe.c svcinstall.c async.c winexesvc32_exe.c winexesvc64_exe.c',
+            use='SAMBA')
+
