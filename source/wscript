@@ -29,7 +29,6 @@ def configure(ctx):
         ctx.env.LIBPATH_SAMBA = ['/usr/lib/i386-linux-gnu/samba']
         ctx.env.LIB_SAMBA = ['smbclient-raw', 'errors', 'talloc', 'dcerpc', 'dcerpc-samba', 'cli-ldap', 'popt']
         ctx.env.INCLUDES_SAMBA = ['/usr/include/samba-4.0']
-        # Perhaps also: -ltevent -ltdb -lldb -lgensec -lregistry -lsamdb -l:samba/ldb/ldbsamba_extensions.so
     f.close()
     # Configure winexe
     ctx.find_program([ a + '-' + p + '-gcc' for a in ['i386', 'i586', 'i686' ] for p in ['mingw32', 'mingw32msvc', 'w64-mingw32'] ], var='CC_WIN32')
