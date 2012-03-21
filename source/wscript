@@ -1,3 +1,15 @@
+#
+# Using this wscript, waf can configure and build in two different ways.
+# 
+# After "./waf configure", "./waf build" will build against public Samba
+# headers and libraries.
+#
+# With the "--use-samba-tree-headers" option, "./waf configure" modifies
+# the checked-out-in-parallel Samba 4 source tree so that the latter's waf
+# will build winexe along with Samba itself. Then "./waf build", using
+# this wscript, runs Samba "waf build", which returns to use this wscript.
+#
+
 import os
 from Configure import conf
 
@@ -48,8 +60,29 @@ def windows_program(self, *k, **kw):
     return self(*k, **kw)
 
 def build(bld):
-    if bld.env._SAMBA_BUILD_ == 4:
-        # We have been called back by Samba waf.
+    if not bld.env._SAMBA_BUILD_ == 4:
+        # Create task generators for winexe components
+        bld.windows_program(target='winexesvc32.exe', source='winexesvc_launch.c winexesvc_loop.c', cc=bld.env.CC_WIN32)
+        bld.windows_program(target='winexesvc64.exe', source='winexesvc_launch.c winexesvc_loop.c', cc=bld.env.CC_WIN64)
+
+        bld.program(target='bin2c', source='bin2c.c', cflags='')
+
+        bld(rule='${SRC[0].abspath()} winexesvc32_exe ${SRC[1]} > ${TGT}', target='winexesvc32_exe.c', source='bin2c winexesvc32.exe')
+        bld(rule='${SRC[0].abspath()} winexesvc64_exe ${SRC[1]} > ${TGT}', target='winexesvc64_exe.c', source='bin2c winexesvc64.exe')
+
+        if bld.env.use_samba_tree_headers:
+            # Create a task generator for building winexe along with Samba
+            # (This results in Samba waf re-running this wscript with bld.env._SAMBA_BUILD_ == 4)
+            bld(rule='cd ' + sambapath + ' && ./buildtools/bin/waf build --targets=winexe && cp -p bin/winexe ${TGT[0].abspath()} && ${STRIP} ${TGT[0].abspath()}',
+                target='winexe',
+                source='winexe.c svcinstall.c async.c winexesvc32_exe.c winexesvc64_exe.c')
+        else:
+            # Create a task generator for building winexe against public Samba headers and libraries
+            bld.program(target='winexe',
+                source='winexe.c svcinstall.c async.c winexesvc32_exe.c winexesvc64_exe.c',
+                use='SAMBA')
+    else:
+        # We are being run by Samba waf.
         # Create a Samba-waf task generator for winexe
         bld.SAMBA_BINARY (
             binname='winexe',
@@ -58,25 +91,6 @@ def build(bld):
             includes='#lib/popt',
             source='winexe.c svcinstall.c async.c build/winexesvc32_exe.c build/winexesvc64_exe.c',
             deps='POPT_SAMBA POPT_CREDENTIALS dcerpc')
+        # Done
         return
-
-    # Create task generators for winexe components
-    bld.windows_program(target='winexesvc32.exe', source='winexesvc_launch.c winexesvc_loop.c', cc=bld.env.CC_WIN32)
-    bld.windows_program(target='winexesvc64.exe', source='winexesvc_launch.c winexesvc_loop.c', cc=bld.env.CC_WIN64)
-
-    bld.program(target='bin2c', source='bin2c.c', cflags='')
-
-    bld(rule='${SRC[0].abspath()} winexesvc32_exe ${SRC[1]} > ${TGT}', target='winexesvc32_exe.c', source='bin2c winexesvc32.exe')
-    bld(rule='${SRC[0].abspath()} winexesvc64_exe ${SRC[1]} > ${TGT}', target='winexesvc64_exe.c', source='bin2c winexesvc64.exe')
-
-    if bld.env.use_samba_tree_headers:
-        # Create a task generator for winexe (including hunks of Samba)
-        bld(rule='cd ' + sambapath + ' && ./buildtools/bin/waf build --targets=winexe && cp -p bin/winexe ${TGT[0].abspath()} && ${STRIP} ${TGT[0].abspath()}',
-            target='winexe',
-            source='winexe.c svcinstall.c async.c winexesvc32_exe.c winexesvc64_exe.c')
-    else:
-        # Create a task generator for winexe
-        bld.program(target='winexe',
-            source='winexe.c svcinstall.c async.c winexesvc32_exe.c winexesvc64_exe.c',
-            use='SAMBA')
 
