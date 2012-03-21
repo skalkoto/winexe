@@ -71,7 +71,7 @@ def build(bld):
         bld(rule='${SRC[0].abspath()} winexesvc64_exe ${SRC[1]} > ${TGT}', target='winexesvc64_exe.c', source='bin2c winexesvc64.exe')
 
         if bld.env.use_samba_tree_headers:
-            # Create a task generator for building winexe along with Samba
+            # Create a task generator for building Samba with winexe as target
             # (This results in Samba waf re-running this wscript with bld.env._SAMBA_BUILD_ == 4)
             bld(rule='cd ' + sambapath + ' && ./buildtools/bin/waf build --targets=winexe && cp -p bin/winexe ${TGT[0].abspath()} && ${STRIP} ${TGT[0].abspath()}',
                 target='winexe',
