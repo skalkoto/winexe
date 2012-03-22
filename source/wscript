@@ -87,7 +87,7 @@ def build(bld):
             # Create a task generator for building winexe against public Samba headers and libraries
             bld.program(target='winexe',
                 source='winexe.c svcinstall.c async.c winexesvc32_exe.c winexesvc64_exe.c',
-                use='SMBCLIENT_RAW DCERPC SAMBA_UTIL POPT SAMBA_EXTRA')
+                use='DCERPC POPT SAMBA_EXTRA')
     else:
         # We are being run by Samba waf.
         # Create a Samba-waf task generator for winexe
