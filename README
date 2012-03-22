@@ -3,12 +3,13 @@ README -- winexe with waf build system
 
 Build instructions
 ------------------
-Winexe uses waf for building.  At the configure stage you can choose
-either the default (viz., to build against public Samba 4 headers and
-libraries) or the option of building against the Samba 4 source tree.
+We use waf for building.  At the configure stage you can choose either the default
+(viz., to build against public Samba 4 headers and libraries) or the option of
+building against the Samba 4 source tree.
 
-As of 20 March 2012 it is not yet possible to build against public
-Samba 4 headers, so the second alternative must be chosen.
+As of 20 March 2012 it is possible to compile against public Samba 4 alpha18
+headers but not to link against public Samba 4 alpha18 libraries which are missing
+some symbols; so to build a working winexe the second alternative must be chosen.
 
 Install 32 and 64-bit cross-(to-Windows)-compilers.  E.g., on Ubuntu 11.10
 
