@@ -26,21 +26,23 @@ def configure(ctx):
     # Create header file to control how winexe gets built
     f = open(out + '/winexe_build.h', 'w')
     if ctx.options.use_samba_tree_headers:
-        print('Using header files in Samba source tree')
+        print('Configuring to use header files and libraries in the Samba 4 source tree (../samba)')
         f.write('#define USE_SAMBA_TREE_HEADERS\n')
         print "Patching Samba files"
-        # Don't include pyldb-util because we can't statically link it
+        # Patch Samba ldb-samba wscript so that we don't include pyldb-util which we can't statically link
         os.system('cd ' + sambapath + ' && sed -i "s/ pyldb-util / /" lib/ldb-samba/wscript_build')
-        # Patch Samba wscript_build to include this wscript in the Samba waf build tree
+        # Patch Samba main wscript_to include ourselves in the build tree
         os.system('cd ' + sambapath + ''' && grep -q "bld\.RECURSE('\.\./source') # added by winexe waf" wscript_build || sed -i "s^bld\.RECURSE('source3')^bld.RECURSE('source3')\\nbld.RECURSE('../source') # added by winexe waf^" wscript_build''')
         print "Chaining to Samba waf configure"
         os.system('cd ' + sambapath + ' && ./buildtools/bin/waf configure --bundled-libraries=ALL --nonshared-binary=winexe -C')
     else:
-        print('Using public Samba header files')
+        print('Configuring to use public Samba 4 header files and libraries')
         f.write('// Use public Samba header files\n')
+        # Define library vars for samba libs
         ctx.env.LIBPATH_SAMBA = ['/usr/lib/i386-linux-gnu/samba']
-        ctx.env.LIB_SAMBA = ['smbclient-raw', 'errors', 'talloc', 'dcerpc', 'dcerpc-samba', 'cli-ldap', 'popt']
+        ctx.env.LIB_SAMBA = ['errors', 'talloc', 'dcerpc', 'dcerpc-samba', 'cli-ldap', 'popt']
         ctx.env.INCLUDES_SAMBA = ['/usr/include/samba-4.0']
+        ctx.check_cfg(package='smbclient-raw', uselib_store='SMBCLIENT_RAW', args=['--cflags', '--libs'])
     f.close()
     # Configure winexe
     ctx.find_program([ a + '-' + p + '-gcc' for a in ['i386', 'i586', 'i686' ] for p in ['mingw32', 'mingw32msvc', 'w64-mingw32'] ], var='CC_WIN32')
@@ -80,7 +82,7 @@ def build(bld):
             # Create a task generator for building winexe against public Samba headers and libraries
             bld.program(target='winexe',
                 source='winexe.c svcinstall.c async.c winexesvc32_exe.c winexesvc64_exe.c',
-                use='SAMBA')
+                use='SMBCLIENT_RAW SAMBA')
     else:
         # We are being run by Samba waf.
         # Create a Samba-waf task generator for winexe
