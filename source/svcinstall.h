@@ -29,6 +29,10 @@ NTSTATUS svc_uninstall(struct tevent_context *ev_ctx,
 
 #ifndef USE_SAMBA_TREE_HEADERS
 
+# The following declarations are needed to compile against Samba 4 alpha18
+# headers which are missing them. The missing declarations have reportedly
+# been added to alpha19.
+
 typedef struct composite_context *(*resolve_name_send_fn)(TALLOC_CTX *mem_ctx,
 							  struct tevent_context *,
 							  void *privdata,
