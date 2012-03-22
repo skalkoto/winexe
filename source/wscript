@@ -41,7 +41,6 @@ def configure(ctx):
         f.write('// Use public Samba header files\n')
         ctx.check_cfg(package='smbclient-raw', uselib_store='SMBCLIENT_RAW', args=['--cflags', '--libs'])
         ctx.check_cfg(package='dcerpc', uselib_store='DCERPC', args=['--cflags', '--libs'])
-        ctx.check_cfg(package='samba-util', uselib_store='SAMBA_UTIL', args=['--cflags', '--libs'])
         ctx.check_cfg(package='popt', uselib_store='POPT', args=['--cflags', '--libs'])
         # Find additional Samba libraries lacking pkg-config support
         ctx.env.INCLUDES_SAMBA_EXTRA = ['/usr/include/samba-4.0']
