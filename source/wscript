@@ -40,7 +40,7 @@ def configure(ctx):
         f.write('// Use public Samba header files\n')
         # Define library vars for samba libs
         ctx.env.LIBPATH_SAMBA = ['/usr/lib/i386-linux-gnu/samba']
-        ctx.env.LIB_SAMBA = ['errors', 'talloc', 'dcerpc', 'dcerpc-samba', 'cli-ldap', 'popt']
+        ctx.env.LIB_SAMBA = ['errors', 'talloc', 'dcerpc-samba', 'cli-ldap', 'popt']
         ctx.env.INCLUDES_SAMBA = ['/usr/include/samba-4.0']
         ctx.check_cfg(package='smbclient-raw', uselib_store='SMBCLIENT_RAW', args=['--cflags', '--libs'])
         ctx.check_cfg(package='dcerpc', uselib_store='DCERPC', args=['--cflags', '--libs'])
