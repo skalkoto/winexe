@@ -44,7 +44,7 @@ def configure(ctx):
         ctx.check_cfg(package='samba-util', uselib_store='SAMBA_UTIL', args=['--cflags', '--libs'])
         ctx.check_cfg(package='popt', uselib_store='POPT', args=['--cflags', '--libs'])
         ctx.env.INCLUDES_SAMBA_EXTRA = ['/usr/include/samba-4.0']
-        ctx.env.LIBPATH_SAMBA_EXTRA = ['/usr/lib/i386-linux-gnu/samba', '/usr/lib/x86_64-linux-gnu']  # FIXME
+        ctx.env.LIBPATH_SAMBA_EXTRA = ['/usr/lib/i386-linux-gnu/samba', '/usr/lib/x86_64-linux-gnu/samba']  # FIXME
         ctx.env.LIB_SAMBA_EXTRA = ['errors', 'dcerpc-samba', 'cli-ldap']
     f.close()
     # Configure winexe
