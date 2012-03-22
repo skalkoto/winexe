@@ -43,8 +43,9 @@ def configure(ctx):
         ctx.check_cfg(package='dcerpc', uselib_store='DCERPC', args=['--cflags', '--libs'])
         ctx.check_cfg(package='samba-util', uselib_store='SAMBA_UTIL', args=['--cflags', '--libs'])
         ctx.check_cfg(package='popt', uselib_store='POPT', args=['--cflags', '--libs'])
+        # Find additional Samba libraries lacking pkg-config support
         ctx.env.INCLUDES_SAMBA_EXTRA = ['/usr/include/samba-4.0']
-        ctx.env.LIBPATH_SAMBA_EXTRA = ['/usr/lib/i386-linux-gnu/samba', '/usr/lib/x86_64-linux-gnu/samba']  # FIXME
+        ctx.env.LIBPATH_SAMBA_EXTRA = ['/usr/lib/i386-linux-gnu/samba', '/usr/lib/x86_64-linux-gnu/samba']  # FIXME: Generalize this
         ctx.env.LIB_SAMBA_EXTRA = ['errors', 'dcerpc-samba', 'cli-ldap']
     f.close()
     ctx.find_program([ a + '-' + p + '-gcc' for a in ['i386', 'i586', 'i686' ] for p in ['mingw32', 'mingw32msvc', 'w64-mingw32'] ], var='CC_WIN32')
