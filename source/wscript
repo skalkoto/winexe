@@ -43,6 +43,7 @@ def configure(ctx):
         ctx.env.LIB_SAMBA = ['errors', 'talloc', 'dcerpc', 'dcerpc-samba', 'cli-ldap', 'popt']
         ctx.env.INCLUDES_SAMBA = ['/usr/include/samba-4.0']
         ctx.check_cfg(package='smbclient-raw', uselib_store='SMBCLIENT_RAW', args=['--cflags', '--libs'])
+        ctx.check_cfg(package='dcerpc', uselib_store='DCERPC', args=['--cflags', '--libs'])
     f.close()
     # Configure winexe
     ctx.find_program([ a + '-' + p + '-gcc' for a in ['i386', 'i586', 'i686' ] for p in ['mingw32', 'mingw32msvc', 'w64-mingw32'] ], var='CC_WIN32')
@@ -82,7 +83,7 @@ def build(bld):
             # Create a task generator for building winexe against public Samba headers and libraries
             bld.program(target='winexe',
                 source='winexe.c svcinstall.c async.c winexesvc32_exe.c winexesvc64_exe.c',
-                use='SMBCLIENT_RAW SAMBA')
+                use='SMBCLIENT_RAW DCERPC SAMBA')
     else:
         # We are being run by Samba waf.
         # Create a Samba-waf task generator for winexe
