@@ -50,7 +50,7 @@ def configure(ctx):
     ctx.find_program([ a + '-' + p + '-gcc' for a in ['i386', 'i586', 'i686' ] for p in ['mingw32', 'mingw32msvc', 'w64-mingw32'] ], var='CC_WIN32')
     ctx.find_program([ a + '-' + p + '-gcc' for a in ['x86_64', 'amd64'      ] for p in ['mingw32', 'mingw32msvc', 'w64-mingw32'] ], var='CC_WIN64')
     ctx.find_program('strip', var='STRIP')
-    # Should also look for runtime files such as windows.h
+    # Also look for windows.h et al?
 
 @conf
 def windows_program(self, *k, **kw):
@@ -60,16 +60,19 @@ def windows_program(self, *k, **kw):
     kw['features'] = 'c cprogram'
     kw['env'] = self.env.copy()
     kw['env'].update({"CC": kw['cc'], "LINK_CC": kw['cc']})
+    #kw['cflags'] = '-Wp,-H'  # Print names of header files included
     return self(*k, **kw)
 
 def build(bld):
     if not bld.env._SAMBA_BUILD_ == 4:
-        # Create task generators for winexe components
+        # Create task generators for the winexesvc Windows executables
         bld.windows_program(target='winexesvc32.exe', source='winexesvc_launch.c winexesvc_loop.c', cc=bld.env.CC_WIN32)
         bld.windows_program(target='winexesvc64.exe', source='winexesvc_launch.c winexesvc_loop.c', cc=bld.env.CC_WIN64)
 
+        # Create task generator for the bin2c utility
         bld.program(target='bin2c', source='bin2c.c', cflags='')
 
+        # Create task generators for the C representations of the winexesvc executables
         bld(rule='${SRC[0].abspath()} winexesvc32_exe ${SRC[1]} > ${TGT}', target='winexesvc32_exe.c', source='bin2c winexesvc32.exe')
         bld(rule='${SRC[0].abspath()} winexesvc64_exe ${SRC[1]} > ${TGT}', target='winexesvc64_exe.c', source='bin2c winexesvc64.exe')
 
