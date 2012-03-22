@@ -60,7 +60,8 @@ def windows_program(self, *k, **kw):
     '''
     kw['features'] = 'c cprogram'
     kw['env'] = self.env.copy()
-    kw['env'].update({"CC": kw['cc'], "LINK_CC": kw['cc']})
+    cmplr = kw['cc']
+    kw['env'].update({'CC': cmplr, 'LINK_CC': cmplr})
     #kw['cflags'] = '-Wp,-H'  # Print names of header files included
     return self(*k, **kw)
 
