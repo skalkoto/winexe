@@ -39,7 +39,6 @@ def configure(ctx):
     else:
         print('Configuring to use public Samba 4 header files and libraries')
         f.write('// Use public Samba header files\n')
-        ctx.check_cfg(package='smbclient-raw', uselib_store='SMBCLIENT_RAW', args=['--cflags', '--libs'])
         ctx.check_cfg(package='dcerpc', uselib_store='DCERPC', args=['--cflags', '--libs'])
         ctx.check_cfg(package='popt', uselib_store='POPT', args=['--cflags', '--libs'])
         # Find additional Samba libraries lacking pkg-config support
@@ -97,7 +96,7 @@ def build(bld):
             ldflags='-Wl,--gc-sections',
             includes='#lib/popt',
             source='winexe.c svcinstall.c async.c build/winexesvc32_exe.c build/winexesvc64_exe.c',
-            deps='POPT_SAMBA POPT_CREDENTIALS dcerpc')
+            deps='dcerpc POPT_SAMBA POPT_CREDENTIALS')
         # Done
         return
 
