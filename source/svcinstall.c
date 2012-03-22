@@ -33,9 +33,9 @@
 #define DEBUG(x,y)
 #define DEBUGLVL(x) 0
 
-# The following declarations are needed to compile against Samba 4 alpha18
-# headers which are missing them. The missing declarations have reportedly
-# been added to alpha19.
+// The following declarations are needed to compile against Samba 4 alpha18
+// headers which are missing them. The missing declarations have reportedly
+// been added to alpha19.
 
 struct smb_composite_savefile {
 	struct {
