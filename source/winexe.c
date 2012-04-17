@@ -110,7 +110,7 @@ static void parse_args(int argc, char *argv[], struct program_options *options)
 
 	poptSetOtherOptionHelp(pc, "//host command");
 
-	while ((opt = poptGetNextOpt(pc)) != -1) {
+	if ((opt = poptGetNextOpt(pc)) != -1) {
 		DEBUG(0, (version_message_fmt, VERSION_MAJOR, VERSION_MINOR));
 		poptPrintUsage(pc, stdout, 0);
 		exit(1);
@@ -120,7 +120,7 @@ static void parse_args(int argc, char *argv[], struct program_options *options)
 
 	argc_new = argc;
 	for (i = 0; i < argc - 1; i++) {
-		if (argv_new[i] == NULL) {
+		if (!argv_new || argv_new[i] == NULL) {
 			argc_new = i;
 			break;
 		}
