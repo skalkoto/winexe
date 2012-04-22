@@ -4,8 +4,6 @@
    License: GNU General Public License version 3
 */
 
-#include "build/winexe_build.h"
-
 #ifdef USE_SAMBA_TREE_HEADERS
 #include "includes.h"
 #include "libcli/libcli.h"

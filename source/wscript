@@ -25,10 +25,8 @@ def configure(ctx):
     ctx.load('compiler_c')
     ctx.env.use_samba_tree_headers = ctx.options.use_samba_tree_headers
     # Create header file to control how winexe gets built
-    f = open(out + '/winexe_build.h', 'w')
     if ctx.options.use_samba_tree_headers:
         print('Configuring to use header files and libraries in the Samba 4 source tree (../samba)')
-        f.write('#define USE_SAMBA_TREE_HEADERS\n')
         print "Patching Samba files"
         # Patch Samba ldb-samba wscript so that we don't include pyldb-util which we can't statically link
         os.system('cd ' + sambapath + ' && sed -i "s/ pyldb-util / /" lib/ldb-samba/wscript_build')
@@ -38,14 +36,12 @@ def configure(ctx):
         os.system('cd ' + sambapath + ' && ./buildtools/bin/waf configure --bundled-libraries=ALL --nonshared-binary=winexe -C')
     else:
         print('Configuring to use public Samba 4 header files and libraries')
-        f.write('// Use public Samba header files\n')
         ctx.check_cfg(package='dcerpc', uselib_store='DCERPC', args=['--cflags', '--libs'])
         ctx.check_cfg(package='popt', uselib_store='POPT', args=['--cflags', '--libs'])
         # Find additional Samba libraries lacking pkg-config support
         ctx.env.INCLUDES_SAMBA_EXTRA = ['/usr/include/samba-4.0']
         ctx.env.LIBPATH_SAMBA_EXTRA = ['/usr/lib/i386-linux-gnu/samba', '/usr/lib/x86_64-linux-gnu/samba']  # FIXME: Generalize this
         ctx.env.LIB_SAMBA_EXTRA = ['errors', 'dcerpc-samba', 'cli-ldap']
-    f.close()
     ctx.find_program([ a + '-' + p + '-gcc' for a in ['i386', 'i586', 'i686' ] for p in ['mingw32', 'mingw32msvc', 'w64-mingw32'] ], var='CC_WIN32')
     ctx.find_program([ a + '-' + p + '-gcc' for a in ['x86_64', 'amd64'      ] for p in ['mingw32', 'mingw32msvc', 'w64-mingw32'] ], var='CC_WIN64')
     ctx.find_program('strip', var='STRIP')
@@ -92,7 +88,7 @@ def build(bld):
         # Create a Samba-waf task generator for winexe
         bld.SAMBA_BINARY (
             binname='winexe',
-            cflags='-ffunction-sections',
+            cflags='-ffunction-sections -DUSE_SAMBA_TREE_HEADERS',
             ldflags='-Wl,--gc-sections',
             includes='#lib/popt',
             source='winexe.c svcinstall.c async.c build/winexesvc32_exe.c build/winexesvc64_exe.c',

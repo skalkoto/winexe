@@ -9,8 +9,6 @@
 #include <sys/termios.h>
 #include <signal.h>
 
-#include "build/winexe_build.h"
-
 #ifdef USE_SAMBA_TREE_HEADERS
 #include "includes.h"
 #include "param/param.h"
