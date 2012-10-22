@@ -1,0 +1,46 @@
+#!/usr/bin/env python
+
+try:
+    import waflib
+    is_samba_waf = False
+except ImportError:
+    is_samba_waf = True
+
+if is_samba_waf:
+    import os
+
+    bld.RECURSE(os.environ['SAMBA_DIR'])
+
+    bld.SAMBA_BINARY(
+        binname='winexe',
+        cflags='-ffunction-sections',
+        ldflags='-Wl,--gc-sections',
+        source='winexe.c svcinstall.c async.c build/winexesvc32_exe.c build/winexesvc64_exe.c',
+        deps='dcerpc POPT_SAMBA POPT_CREDENTIALS')
+else:
+    bld.program(target='winexesvc32.exe',
+        source='winexesvc_launch.c winexesvc_loop.c',
+        linkflags='-s',
+        env=bld.all_envs['win32'])
+    bld.program(target='winexesvc64.exe',
+        source='winexesvc_launch.c winexesvc_loop.c',
+        linkflags='-s',
+        env=bld.all_envs['win64'])
+    bld.program(target='bin2c',
+        source='bin2c.c',
+        cflags='')
+    bld(rule='${SRC[0].abspath()} winexesvc32_exe ${SRC[1]} > ${TGT} 2>/dev/null',
+        target='winexesvc32_exe.c',
+        source='bin2c winexesvc32.exe')
+    bld(rule='${SRC[0].abspath()} winexesvc64_exe ${SRC[1]} > ${TGT} 2>/dev/null',
+        target='winexesvc64_exe.c',
+        source='bin2c winexesvc64.exe')
+    bld(rule='SAMBA_DIR=%(sd)s %(sd)s/buildtools/bin/waf build --nonshared-binary=winexe --targets=winexe && cp %(sd)s/bin/winexe ${TGT}' % {'sd': bld.env.samba_dir},
+        target='winexe',
+        source='winexe.c svcinstall.c async.c winexesvc32_exe.c winexesvc64_exe.c')
+    bld.program(target='winexe-exp',
+        source='winexe.c svcinstall.c async.c winexesvc32_exe.c winexesvc64_exe.c',
+        includes='%(sd)s/bin/default/include/public' % {'sd': bld.env.samba_dir},
+        lib='talloc popt :libdcerpc.so.0 :libsmbclient-raw.so.0 :libsamba-credentials.so.0 :libsamba-util.so.0 tevent tevent :libsamba-hostconfig.so.0 errors dcerpc-samba :libndr-standard.so.0 cli-ldap',
+        libpath='%(sd)s/bin/shared %(sd)s/bin/shared/private' % {'sd': bld.env.samba_dir},
+        rpath='%(sd)s/bin/shared %(sd)s/bin/shared/private' % {'sd': bld.env.samba_dir})

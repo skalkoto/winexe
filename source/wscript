@@ -1,98 +1,39 @@
-#
-# Using this wscript, waf can configure and build in two different ways.
-# 
-# After "./waf configure", "./waf build" will build against public Samba
-# headers and libraries.
-#
-# With the "--use-samba-tree-headers" option, "./waf configure" modifies
-# the checked-out-in-parallel Samba 4 source tree so that the latter's waf
-# will build winexe along with Samba itself. Then "./waf build", using
-# this wscript, runs Samba "waf build", which returns to use this wscript.
-#
+#!/usr/bin/env python
 
-import os
-from Configure import conf
+try:
+    import waflib
+    is_samba_waf = False
+except ImportError:
+    is_samba_waf = True
 
-top = '.'
-out = 'build'
-sambapath = os.path.abspath('../samba')
+if is_samba_waf:
+    import os
+    os.chdir(os.environ['SAMBA_DIR'])
+    execfile("wscript")
+    Options.launch_dir = os.getcwd()
+else:
+    import os
 
-def options(ctx):
-    ctx.load('compiler_c')
-    ctx.add_option('--use-samba-tree-headers', dest='use_samba_tree_headers', action='store_true', default=False, help='Use header files in ../samba rather than public Samba header files (default=False)')
+    top = '.'
+    out = 'build'
+    AR32 = ['i386', 'i586', 'i686']
+    AR64 = ['x86_64', 'amd64']
+    TC = ['mingw32', 'mingw32msvc', 'w64-mingw32']
 
-def configure(ctx):
-    ctx.load('compiler_c')
-    ctx.env.use_samba_tree_headers = ctx.options.use_samba_tree_headers
-    # Create header file to control how winexe gets built
-    if ctx.options.use_samba_tree_headers:
-        print('Configuring to use header files and libraries in the Samba 4 source tree (../samba)')
-        print "Patching Samba files"
-        # Patch Samba ldb-samba wscript so that we don't include pyldb-util which we can't statically link
-        os.system('cd ' + sambapath + ' && sed -i "s/ pyldb-util / /" lib/ldb-samba/wscript_build')
-        # Patch Samba main wscript_to include ourselves in the build tree
-        os.system('cd ' + sambapath + ''' && grep -q "bld\.RECURSE('\.\./source') # added by winexe waf" wscript_build || sed -i "s^bld\.RECURSE('source3')^bld.RECURSE('source3')\\nbld.RECURSE('../source') # added by winexe waf^" wscript_build''')
-        print "Chaining to Samba waf configure"
-        os.system('cd ' + sambapath + ' && ./buildtools/bin/waf configure --bundled-libraries=ALL --nonshared-binary=winexe -C')
-    else:
-        print('Configuring to use public Samba 4 header files and libraries')
-        ctx.check_cfg(package='dcerpc', uselib_store='DCERPC', args=['--cflags', '--libs'])
-        ctx.check_cfg(package='popt', uselib_store='POPT', args=['--cflags', '--libs'])
-        # Find additional Samba libraries lacking pkg-config support
-        ctx.env.INCLUDES_SAMBA_EXTRA = ['/usr/include/samba-4.0']
-        ctx.env.LIBPATH_SAMBA_EXTRA = ['/usr/lib/i386-linux-gnu/samba', '/usr/lib/x86_64-linux-gnu/samba']  # FIXME: Generalize this
-        ctx.env.LIB_SAMBA_EXTRA = ['errors', 'dcerpc-samba', 'cli-ldap']
-    ctx.find_program([ a + '-' + p + '-gcc' for a in ['i386', 'i586', 'i686' ] for p in ['mingw32', 'mingw32msvc', 'w64-mingw32'] ], var='CC_WIN32')
-    ctx.find_program([ a + '-' + p + '-gcc' for a in ['x86_64', 'amd64'      ] for p in ['mingw32', 'mingw32msvc', 'w64-mingw32'] ], var='CC_WIN64')
-    ctx.find_program('strip', var='STRIP')
-    # Also look for windows.h et al?
+    def options(ctx):
+        ctx.load('compiler_c')
+        ctx.add_option('--samba-dir', action='store', default='../samba', help='samba directory location', dest='samba_dir')
 
-@conf
-def windows_program(self, *k, **kw):
-    '''creates task generator for compiling a Windows program
-    Set keyword argument cc to the name of the compiler to use.
-    '''
-    kw['features'] = 'c cprogram'
-    kw['env'] = self.env.copy()
-    cmplr = kw['cc']
-    kw['env'].update({'CC': cmplr, 'LINK_CC': cmplr})
-    #kw['cflags'] = '-Wp,-H'  # Print names of header files included
-    return self(*k, **kw)
+    def configure(ctx):
+        ctx.env.samba_dir = os.path.abspath(ctx.options.samba_dir)
+        ctx.load('compiler_c')
 
-def build(bld):
-    if not bld.env._SAMBA_BUILD_ == 4:
-        # Create task generators for the winexesvc Windows executables
-        bld.windows_program(target='winexesvc32.exe', source='winexesvc_launch.c winexesvc_loop.c', cc=bld.env.CC_WIN32)
-        bld.windows_program(target='winexesvc64.exe', source='winexesvc_launch.c winexesvc_loop.c', cc=bld.env.CC_WIN64)
+        ctx.setenv('win32', ctx.env)
+        ctx.find_program([ a + '-' + t + '-gcc' for a in AR32 for t in TC], var='CC_WIN32')
+        ctx.env.update({"CC": ctx.env.CC_WIN32, "LINK_CC": ctx.env.CC_WIN32})
 
-        # Create task generator for the bin2c utility
-        bld.program(target='bin2c', source='bin2c.c', cflags='')
+        ctx.setenv('win64', ctx.env)
+        ctx.find_program([ a + '-' + t + '-gcc' for a in AR64 for t in TC], var='CC_WIN64')
+        ctx.env.update({"CC": ctx.env.CC_WIN64, "LINK_CC": ctx.env.CC_WIN64})
 
-        # Create task generators for the C representations of the winexesvc executables
-        bld(rule='${SRC[0].abspath()} winexesvc32_exe ${SRC[1]} > ${TGT}', target='winexesvc32_exe.c', source='bin2c winexesvc32.exe')
-        bld(rule='${SRC[0].abspath()} winexesvc64_exe ${SRC[1]} > ${TGT}', target='winexesvc64_exe.c', source='bin2c winexesvc64.exe')
-
-        if bld.env.use_samba_tree_headers:
-            # Create a task generator for building Samba with winexe as target
-            # (This results in Samba waf re-running this wscript with bld.env._SAMBA_BUILD_ == 4)
-            bld(rule='cd ' + sambapath + ' && ./buildtools/bin/waf build --targets=winexe && cp -p bin/winexe ${TGT[0].abspath()} && ${STRIP} ${TGT[0].abspath()}',
-                target='winexe',
-                source='winexe.c svcinstall.c async.c winexesvc32_exe.c winexesvc64_exe.c')
-        else:
-            # Create a task generator for building winexe against public Samba headers and libraries
-            bld.program(target='winexe',
-                source='winexe.c svcinstall.c async.c winexesvc32_exe.c winexesvc64_exe.c',
-                use='DCERPC POPT SAMBA_EXTRA')
-    else:
-        # We are being run by Samba waf.
-        # Create a Samba-waf task generator for winexe
-        bld.SAMBA_BINARY (
-            binname='winexe',
-            cflags='-ffunction-sections -DUSE_SAMBA_TREE_HEADERS',
-            ldflags='-Wl,--gc-sections',
-            includes='#lib/popt',
-            source='winexe.c svcinstall.c async.c build/winexesvc32_exe.c build/winexesvc64_exe.c',
-            deps='dcerpc POPT_SAMBA POPT_CREDENTIALS')
-        # Done
-        return
-
+        os.system('SAMBA_DIR=%(sd)s %(sd)s/buildtools/bin/waf configure --nonshared-binary=winexe' % {'sd': ctx.env.samba_dir})
