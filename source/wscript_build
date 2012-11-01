@@ -35,7 +35,7 @@ else:
     bld(rule='${SRC[0].abspath()} winexesvc64_exe ${SRC[1]} > ${TGT} 2>/dev/null',
         target='winexesvc64_exe.c',
         source='bin2c winexesvc64.exe')
-    bld(rule='SAMBA_DIR=%(sd)s %(sd)s/buildtools/bin/waf build --nonshared-binary=winexe --targets=winexe && cp %(sd)s/bin/winexe ${TGT}' % {'sd': bld.env.samba_dir},
+    bld(rule='SAMBA_DIR=%(sd)s %(sd)s/buildtools/bin/waf build --nonshared-binary=winexe --targets=winexe -v && cp %(sd)s/bin/winexe ${TGT}' % {'sd': bld.env.samba_dir},
         target='winexe',
         source='winexe.c svcinstall.c async.c winexesvc32_exe.c winexesvc64_exe.c')
     bld.program(target='winexe-exp',
