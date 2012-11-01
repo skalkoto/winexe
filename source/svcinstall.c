@@ -59,7 +59,7 @@ static NTSTATUS svc_pipe_connect(struct tevent_context *ev_ctx,
 	asprintf(&binding, "ncacn_np:%s%s", hostname, DEBUGLVL(9)?"[print]":"");
 	svc_dcerpc_init_once();
 	status =
-	    dcerpc_pipe_connect(NULL, psvc_pipe, binding,
+	    dcerpc_pipe_connect(ev_ctx, psvc_pipe, binding,
 				&ndr_table_svcctl, credentials, ev_ctx, cllp_ctx);
 	free(binding);
 	return status;
