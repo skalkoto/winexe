@@ -4,23 +4,16 @@
    License: GNU General Public License version 3
 */
 
-#ifdef USE_SAMBA_TREE_HEADERS
-#include "includes.h"
-#include "libcli/libcli.h"
-#include "libcli/raw/raw_proto.h"
-#else
 #include <talloc.h>
 #include <string.h>
 #include <stdint.h>
 #include <stdbool.h>
-#include <samba-4.0/core/ntstatus.h>
-#include <samba-4.0/core/werror.h>
-#include <samba-4.0/util/data_blob.h>
-#include <samba-4.0/util/time.h>
-#include <samba-4.0/smb_cliraw.h>
-#define DEBUG(x,y)
-#define DEBUGLVL(x) 0
-#endif
+#include <core/ntstatus.h>
+#include <core/werror.h>
+#include <util/data_blob.h>
+#include <util/time.h>
+#include <smb_cliraw.h>
+#include <util/debug.h>
 
 #include "async.h"
 

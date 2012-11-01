@@ -3,50 +3,22 @@
    Contact: andrzej.hajda@wp.pl
    License: GNU General Public License version 3
 */
-
-#ifdef USE_SAMBA_TREE_HEADERS
-#include "includes.h"
-#include "system/filesys.h"
-#include "param/param.h"
-#include "libcli/resolve/resolve.h"
-#include "lib/events/events.h"
-#include "lib/util/samba_util.h"
-#include "libcli/libcli.h"
-#include "librpc/rpc/dcerpc.h"
-#include "librpc/gen_ndr/ndr_svcctl_c.h"
-#include "libcli/smb_composite/smb_composite.h"
-#else
 #include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include <core/ntstatus.h>
 #include <fcntl.h>
+
 #include <tevent.h>
-#include <samba-4.0/core/ntstatus.h>
-#include <samba-4.0/param.h>
-#include <samba-4.0/gen_ndr/ndr_svcctl_c.h>
-#include <samba-4.0/dcerpc.h>
-#include <samba-4.0/smb_cliraw.h>
-#include <samba-4.0/smb_cli.h>
-#include <samba-4.0/samba_util.h>
-#define DEBUG(x,y)
-#define DEBUGLVL(x) 0
+#include <param.h>
+#include <credentials.h>
+#include <util/time.h>
+#include <gen_ndr/nbt.h>
+#include <gen_ndr/ndr_svcctl_c.h>
+#include <smb_cliraw.h>
+#include <smb_cli.h>
+#include <smb_composite.h>
+#include <util/debug.h>
 
-// The following declarations are needed to compile against Samba 4 alpha18
-// headers which are missing them. The missing declarations have reportedly
-// been added to alpha19.
-
-struct smb_composite_savefile {
-	struct {
-		const char *fname;
-		uint8_t *data;
-		uint32_t size;
-	} in;
-};
-
-NTSTATUS smb_composite_savefile(struct smbcli_tree *tree,
-				struct smb_composite_savefile *io);
-#endif
-
+#include "winexesvc.h"
 #include "svcinstall.h"
 
 //#define SERVICE_ALL_ACCESS (0xF01FF)

@@ -8,35 +8,19 @@
 #include <sys/unistd.h>
 #include <sys/termios.h>
 #include <signal.h>
-
-#ifdef USE_SAMBA_TREE_HEADERS
-#include "includes.h"
-#include "param/param.h"
-#include "libcli/resolve/resolve.h"
-#include "lib/events/events.h"
-#include "lib/cmdline/popt_common.h"
-#include "libcli/libcli.h"
-#include "auth/credentials/credentials.h"
-#define TEVENT_CONTEXT_INIT s4_event_context_init
-#else
 #include <string.h>
 #include <stdlib.h>
 #include <tevent.h>
-#include <samba-4.0/core/ntstatus.h>
-#include <samba-4.0/core/werror.h>
-#include <samba-4.0/util/data_blob.h>
-#include <samba-4.0/util/time.h>
-#include <samba-4.0/util/memory.h>
-#include <samba-4.0/param.h>
-#include <samba-4.0/samba/popt.h>
-#include <samba-4.0/dcerpc.h>
-#include <samba-4.0/smb_cliraw.h>
-#include <samba-4.0/smb_cli.h>
-#include <samba-4.0/credentials.h>
+#include <popt.h>
+#include <util/memory.h>
+#include <credentials.h>
+#include <util/time.h>
+#include <util/debug.h>
+#include <smb_cliraw.h>
+#include <smb_cli.h>
+#include <dcerpc.h>
+#include <param.h>
 #define TEVENT_CONTEXT_INIT tevent_context_init
-#define DEBUG(x,y)
-#define DEBUGLVL(x) 0
-#endif
 
 #include "async.h"
 #include "svcinstall.h"
