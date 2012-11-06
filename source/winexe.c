@@ -20,6 +20,8 @@
 #include <smb_cli.h>
 #include <dcerpc.h>
 #include <param.h>
+/* TODO: remove this header */
+#include <cmdline/popt_common.h>
 #define TEVENT_CONTEXT_INIT tevent_context_init
 
 #include "async.h"

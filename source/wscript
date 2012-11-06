@@ -24,6 +24,11 @@ else:
         ctx.load('compiler_c')
         ctx.add_option('--samba-dir', action='store', default='../samba', help='samba directory location', dest='samba_dir')
 
+    def distclean(ctx):
+        import shutil
+        shutil.rmtree(ctx.options.samba_dir + "/bin", ignore_errors=True)
+        shutil.rmtree(out, ignore_errors=True)
+
     def configure(ctx):
         ctx.env.samba_dir = os.path.abspath(ctx.options.samba_dir)
         ctx.load('compiler_c')
