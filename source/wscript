@@ -22,7 +22,8 @@ else:
 
     def options(ctx):
         ctx.load('compiler_c')
-        ctx.add_option('--samba-dir', action='store', default='../samba', help='samba directory location', dest='samba_dir')
+        g = ctx.get_option_group('configure options')
+        g.add_option('--samba-dir', action='store', default='../samba', help='samba directory location', dest='samba_dir')
 
     def distclean(ctx):
         import shutil
