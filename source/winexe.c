@@ -396,6 +396,7 @@ int main(int argc, char *argv[])
 	DEBUG(1, (version_message_fmt, VERSION_MAJOR, VERSION_MINOR));
 	ev_ctx = TEVENT_CONTEXT_INIT(talloc_autofree_context());
 	options.credentials = cmdline_credentials;
+	lpcfg_set_option(cmdline_lp_ctx, "client ntlmv2 auth=no");
 
 	if (options.flags & SVC_FORCE_UPLOAD)
 		svc_uninstall(ev_ctx, options.hostname,
