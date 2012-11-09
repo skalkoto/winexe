@@ -395,11 +395,12 @@ int main(int argc, char *argv[])
 	parse_args(argc, argv, &options);
 	DEBUG(1, (version_message_fmt, VERSION_MAJOR, VERSION_MINOR));
 	ev_ctx = TEVENT_CONTEXT_INIT(talloc_autofree_context());
+	options.credentials = cmdline_credentials;
 
 	if (options.flags & SVC_FORCE_UPLOAD)
 		svc_uninstall(ev_ctx, options.hostname,
 			      SERVICE_NAME, SERVICE_FILENAME,
-			      cmdline_credentials,
+			      options.credentials,
 			      cmdline_lp_ctx);
 
 	if (!(options.flags & SVC_IGNORE_INTERACTIVE)) {
@@ -407,7 +408,7 @@ int main(int argc, char *argv[])
 			    SERVICE_NAME, SERVICE_FILENAME,
 			    winexesvc32_exe, winexesvc32_exe_len,
 			    winexesvc64_exe, winexesvc64_exe_len,
-			    cmdline_credentials, cmdline_lp_ctx, options.flags);
+			    options.credentials, cmdline_lp_ctx, options.flags);
 	}
 
 	struct smbcli_options smb_options;
@@ -418,7 +419,7 @@ int main(int argc, char *argv[])
 
 	struct smbcli_state *cli_state;
 	status = smbcli_full_connection(NULL, &cli_state, options.hostname, lpcfg_smb_ports(cmdline_lp_ctx), "IPC$",
-	                            NULL, lpcfg_socket_options(cmdline_lp_ctx), cmdline_credentials, lpcfg_resolve_context(cmdline_lp_ctx), ev_ctx,
+	                            NULL, lpcfg_socket_options(cmdline_lp_ctx), options.credentials, lpcfg_resolve_context(cmdline_lp_ctx), ev_ctx,
 	            		    &smb_options, &session_options, lpcfg_gensec_settings(NULL, cmdline_lp_ctx));
 	if (cli_state)
 		cli_tree = cli_state->tree;
@@ -446,7 +447,6 @@ int main(int argc, char *argv[])
 	c->ac_ctrl->cb_error = (async_cb_error) on_ctrl_pipe_error;
 	c->ac_ctrl->cb_close = (async_cb_close) on_ctrl_pipe_close;
 	c->args = &options;
-	c->args->credentials = cmdline_credentials;
 	c->return_code = 99;
 	c->state = STATE_OPENING;
 	async_open(c->ac_ctrl, "\\pipe\\" PIPE_NAME, OPENX_MODE_ACCESS_RDWR);
