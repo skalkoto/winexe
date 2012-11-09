@@ -46,4 +46,4 @@ else:
         # patch if neccessary, hopefully it will be removed in near future
         os.system('git --git-dir=%(sd)s/.git config branch.master.rebase true' % {'sd': ctx.env.samba_dir})
         os.system('(cd %(sd)s && git am -q >/dev/null 2>&1 || git am -q --abort)<0001-build-Removed-python-dependency-from-ldbsamba.patch' % {'sd': ctx.env.samba_dir})
-        os.system('SAMBA_DIR=%(sd)s %(sd)s/buildtools/bin/waf configure --bundled-libraries=ALL --nonshared-binary=winexe build --targets=dcerpc,POPT_SAMBA,POPT_CREDENTIALS' % {'sd': ctx.env.samba_dir})
+        os.system('SAMBA_DIR=%(sd)s %(sd)s/buildtools/bin/waf configure --bundled-libraries=ALL --nonshared-binary=winexe && SAMBA_DIR=%(sd)s %(sd)s/buildtools/bin/waf build --targets=dcerpc,POPT_SAMBA,POPT_CREDENTIALS' % {'sd': ctx.env.samba_dir})
