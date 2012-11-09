@@ -20,8 +20,6 @@
 #include <smb_cli.h>
 #include <dcerpc.h>
 #include <param.h>
-/* TODO: remove this header */
-#include <cmdline/popt_common.h>
 #define TEVENT_CONTEXT_INIT tevent_context_init
 
 #include "async.h"
@@ -29,6 +27,8 @@
 #include "winexesvc.h"
 
 #define SERVICE_FILENAME SERVICE_NAME ".exe"
+
+static struct loadparm_context *cmdline_lp_ctx;
 
 /* winexesvc32_exe.c */
 extern unsigned int winexesvc32_exe_len;
@@ -67,26 +67,31 @@ static void parse_args(int argc, char *argv[], struct program_options *options)
 	int flag_reinstall = 0;
 	int flag_uninstall = 0;
 	int flag_system = 0;
+	char *opt_user = NULL;
+	char *opt_kerberos = NULL;
+	char *opt_auth_file = NULL;
+	char *opt_debuglevel = NULL;
 
 	struct poptOption long_options[] = {
 		POPT_AUTOHELP
-		POPT_COMMON_SAMBA
-		POPT_COMMON_CONNECTION
-		POPT_COMMON_CREDENTIALS
-		{"uninstall", 0, POPT_ARG_NONE, &flag_uninstall, 0,
-		 "Uninstall winexe service after remote execution", NULL},
-		{"reinstall", 0, POPT_ARG_NONE, &flag_reinstall, 0,
-		 "Reinstall winexe service before remote execution", NULL},
-		{"system", 0, POPT_ARG_NONE, &flag_system, 0,
-		 "Use SYSTEM account" , NULL},
-		{"runas", 0, POPT_ARG_STRING, &options->runas, 0,
-		 "Run as user (BEWARE: password is sent in cleartext over net)" , "[DOMAIN\\]USERNAME%PASSWORD"},
-		{"runas-file", 0, POPT_ARG_STRING, &options->runas_file, 0,
-		 "Run as user options defined in a file", "FILE"},
-		{"interactive", 0, POPT_ARG_INT, &flag_interactive, 0,
-		 "Desktop interaction: 0 - disallow, 1 - allow. If you allow use also --system switch (Win requirement). Vista do not support this option.", "0|1"},
-		{"ostype", 0, POPT_ARG_INT, &flag_ostype, 0,
-		 "OS type: 0 - 32bit, 1 - 64bit, 2 - winexe will decide. Determines which version (32bit/64bit) of service will be installed.", "0|1|2"},
+		{ "user", 'U', POPT_ARG_STRING, &opt_user, 0, "Set the network username", "[DOMAIN/]USERNAME[%PASSWORD]" },
+		{ "authentication-file", 'A', POPT_ARG_STRING, &opt_auth_file, 0, "Get the credentials from a file", "FILE" },
+		{ "kerberos", 'k', POPT_ARG_STRING, &opt_kerberos, 0, "Use Kerberos, -k [yes|no]" },
+		{ "debuglevel", 'd', POPT_ARG_STRING, &opt_debuglevel, 0, "Set debug level", "DEBUGLEVEL" },
+		{ "uninstall", 0, POPT_ARG_NONE, &flag_uninstall, 0,
+		  "Uninstall winexe service after remote execution", NULL},
+		{ "reinstall", 0, POPT_ARG_NONE, &flag_reinstall, 0,
+		  "Reinstall winexe service before remote execution", NULL},
+		{ "system", 0, POPT_ARG_NONE, &flag_system, 0,
+		  "Use SYSTEM account" , NULL},
+		{ "runas", 0, POPT_ARG_STRING, &options->runas, 0,
+		  "Run as user (BEWARE: password is sent in cleartext over net)" , "[DOMAIN\\]USERNAME%PASSWORD"},
+		{ "runas-file", 0, POPT_ARG_STRING, &options->runas_file, 0,
+		  "Run as user options defined in a file", "FILE"},
+		{ "interactive", 0, POPT_ARG_INT, &flag_interactive, 0,
+		  "Desktop interaction: 0 - disallow, 1 - allow. If you allow use also --system switch (Win requirement). Vista do not support this option.", "0|1"},
+		{ "ostype", 0, POPT_ARG_INT, &flag_ostype, 0,
+		  "OS type: 0 - 32bit, 1 - 64bit, 2 - winexe will decide. Determines which version (32bit/64bit) of service will be installed.", "0|1|2"},
 		POPT_TABLEEND
 	};
 
@@ -116,6 +121,23 @@ static void parse_args(int argc, char *argv[], struct program_options *options)
 		poptPrintUsage(pc, stdout, 0);
 		exit(1);
 	}
+
+	if (opt_debuglevel)
+		lpcfg_set_cmdline(cmdline_lp_ctx, "log level", opt_debuglevel);
+
+	options->credentials = cli_credentials_init(talloc_autofree_context());
+	if (opt_user)
+		cli_credentials_parse_string(options->credentials, opt_user, CRED_SPECIFIED);
+	else if (opt_auth_file)
+		cli_credentials_parse_file(options->credentials, opt_auth_file, CRED_SPECIFIED);
+	cli_credentials_guess(options->credentials, cmdline_lp_ctx);
+
+	if (opt_kerberos)
+		cli_credentials_set_kerberos_state(options->credentials,
+						strcmp(opt_kerberos, "yes")
+						? CRED_MUST_USE_KERBEROS
+						: CRED_DONT_USE_KERBEROS);
+
 
 	if (options->runas == NULL && options->runas_file != NULL) {
 		struct cli_credentials* cred = cli_credentials_init(talloc_autofree_context());
@@ -392,10 +414,11 @@ int main(int argc, char *argv[])
 	struct smbcli_tree *cli_tree;
 	struct program_options options;
 
+	cmdline_lp_ctx = loadparm_init_global(false);
+ 
 	parse_args(argc, argv, &options);
 	DEBUG(1, (version_message_fmt, VERSION_MAJOR, VERSION_MINOR));
 	ev_ctx = TEVENT_CONTEXT_INIT(talloc_autofree_context());
-	options.credentials = cmdline_credentials;
 	lpcfg_set_option(cmdline_lp_ctx, "client ntlmv2 auth=no");
 
 	if (options.flags & SVC_FORCE_UPLOAD)

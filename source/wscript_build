@@ -42,6 +42,6 @@ else:
         bld.program(target='winexe-dyn',
             source='winexe.c svcinstall.c async.c winexesvc32_exe.c winexesvc64_exe.c',
             includes='%(sd)s/bin/default/include/public %(sd)s/source4/lib' % {'sd': bld.env.samba_dir},
-            lib='talloc popt :libdcerpc.so.0 :libsmbclient-raw.so.0 :libsamba-credentials.so.0 :libsamba-util.so.0 tevent tevent :libsamba-hostconfig.so.0 errors dcerpc-samba :libndr-standard.so.0 cli-ldap :%(sd)s/bin/default/source4/lib/cmdline/popt_common_5.o :%(sd)s/bin/default/source4/lib/cmdline/popt_credentials_6.o cmdline-credentials' % {'sd': bld.env.samba_dir},
+            lib='talloc popt :libdcerpc.so.0 :libsmbclient-raw.so.0 :libsamba-credentials.so.0 :libsamba-util.so.0 tevent tevent :libsamba-hostconfig.so.0 errors dcerpc-samba :libndr-standard.so.0 cli-ldap' % {'sd': bld.env.samba_dir},
             libpath='%(sd)s/bin/shared %(sd)s/bin/shared/private' % {'sd': bld.env.samba_dir},
             rpath='%(sd)s/bin/shared %(sd)s/bin/shared/private' % {'sd': bld.env.samba_dir})
