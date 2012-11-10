@@ -41,7 +41,7 @@ else:
     if bld.options.dynamic_link:
         bld.program(target='winexe-dyn',
             source='winexe.c svcinstall.c async.c winexesvc32_exe.c winexesvc64_exe.c',
-            includes='%(sd)s/bin/default/include/public %(sd)s/source4/lib' % {'sd': bld.env.samba_dir},
-            lib='talloc popt :libdcerpc.so.0 :libsmbclient-raw.so.0 :libsamba-credentials.so.0 :libsamba-util.so.0 tevent tevent :libsamba-hostconfig.so.0 errors dcerpc-samba :libndr-standard.so.0 cli-ldap' % {'sd': bld.env.samba_dir},
-            libpath='%(sd)s/bin/shared %(sd)s/bin/shared/private' % {'sd': bld.env.samba_dir},
-            rpath='%(sd)s/bin/shared %(sd)s/bin/shared/private' % {'sd': bld.env.samba_dir})
+            includes='%(sd)s/bin/default/include/public' % {'sd': bld.env.samba_dir},
+            lib='talloc popt :libdcerpc.so.0 :libsmbclient-raw.so.0 :libsamba-credentials.so.0 :libsamba-util.so.0 tevent tevent :libsamba-hostconfig.so.0 :libndr-standard.so.0 :private/liberrors.so :private/libdcerpc-samba.so :private/libcli-ldap.so' % {'sd': bld.env.samba_dir},
+            libpath='%(sd)s/bin/shared' % {'sd': bld.env.samba_dir},
+            rpath='%(sd)s/bin/shared' % {'sd': bld.env.samba_dir})
