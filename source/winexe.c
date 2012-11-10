@@ -67,13 +67,14 @@ static void parse_args(int argc, char *argv[], struct program_options *options)
 	int flag_reinstall = 0;
 	int flag_uninstall = 0;
 	int flag_system = 0;
+	int flag_help = 0;
 	char *opt_user = NULL;
 	char *opt_kerberos = NULL;
 	char *opt_auth_file = NULL;
 	char *opt_debuglevel = NULL;
 
 	struct poptOption long_options[] = {
-		POPT_AUTOHELP
+		{ "help", '?', POPT_ARG_NONE, &flag_help, 0, "Display help message" },
 		{ "user", 'U', POPT_ARG_STRING, &opt_user, 0, "Set the network username", "[DOMAIN/]USERNAME[%PASSWORD]" },
 		{ "authentication-file", 'A', POPT_ARG_STRING, &opt_auth_file, 0, "Get the credentials from a file", "FILE" },
 		{ "kerberos", 'k', POPT_ARG_STRING, &opt_kerberos, 0, "Use Kerberos, -k [yes|no]" },
@@ -97,11 +98,11 @@ static void parse_args(int argc, char *argv[], struct program_options *options)
 
 	pc = poptGetContext(argv[0], argc, (const char **) argv, long_options, 0);
 
-	poptSetOtherOptionHelp(pc, "//host command");
+	poptSetOtherOptionHelp(pc, "[OPTION]... //HOST COMMAND\nOptions:");
 
-	if ((opt = poptGetNextOpt(pc)) != -1) {
+	if (((opt = poptGetNextOpt(pc)) != -1) || flag_help) {
 		DEBUG(0, (version_message_fmt, VERSION_MAJOR, VERSION_MINOR));
-		poptPrintUsage(pc, stdout, 0);
+		poptPrintHelp(pc, stdout, 0);
 		exit(1);
 	}
 
@@ -118,7 +119,7 @@ static void parse_args(int argc, char *argv[], struct program_options *options)
 	if (argc_new != 2 || argv_new[0][0] != '/'
 	    || argv_new[0][1] != '/') {
 		DEBUG(0, (version_message_fmt, VERSION_MAJOR, VERSION_MINOR));
-		poptPrintUsage(pc, stdout, 0);
+		poptPrintHelp(pc, stdout, 0);
 		exit(1);
 	}
 
