@@ -19,7 +19,7 @@
 #include <smb_cliraw.h>
 #include <smb_cli.h>
 #include <dcerpc.h>
-#include <param.h>
+
 #define TEVENT_CONTEXT_INIT tevent_context_init
 
 #include "async.h"

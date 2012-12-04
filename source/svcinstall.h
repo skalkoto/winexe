@@ -27,33 +27,8 @@ NTSTATUS svc_uninstall(struct tevent_context *ev_ctx,
 		       struct cli_credentials * credentials,
 		       struct loadparm_context *cllp_ctx);
 
-#ifndef USE_SAMBA_TREE_HEADERS
-
-// The following declarations are needed to compile against Samba 4 alpha18
-// headers which are missing them. The missing declarations have reportedly
-// been added to alpha19.
-
-typedef struct composite_context *(*resolve_name_send_fn)(TALLOC_CTX *mem_ctx,
-							  struct tevent_context *,
-							  void *privdata,
-							  uint32_t flags,
-							  uint16_t port,
-							  struct nbt_name *);
-
-typedef NTSTATUS (*resolve_name_recv_fn)(struct composite_context *creq,
-                                         TALLOC_CTX *mem_ctx,
-                                         struct socket_address ***addrs,
-                                         char ***names);
-
-struct resolve_context {
-	struct resolve_method {
-		resolve_name_send_fn send_fn;
-		resolve_name_recv_fn recv_fn;
-		void *privdata;
-		struct resolve_method *prev, *next;
-	} *methods;
-};
-
+const char **lpcfg_smb_ports(struct loadparm_context *);
+const char *lpcfg_socket_options(struct loadparm_context *);
+struct gensec_settings *lpcfg_gensec_settings(TALLOC_CTX *, struct loadparm_context *);
+struct loadparm_context *loadparm_init_global(bool load_default);
 struct resolve_context *lpcfg_resolve_context(struct loadparm_context *lp_ctx);
-
-#endif

@@ -8,10 +8,8 @@
 #include <fcntl.h>
 
 #include <tevent.h>
-#include <param.h>
 #include <credentials.h>
 #include <util/time.h>
-#include <gen_ndr/nbt.h>
 #include <gen_ndr/ndr_svcctl_c.h>
 #include <smb_cliraw.h>
 #include <smb_cli.h>
