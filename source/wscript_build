@@ -22,13 +22,14 @@ bld(name="bin2c", rule='${SRC[0].abspath()} winexesvc64_exe ${SRC[1]} > ${TGT} 2
     target='winexesvc64_exe.c',
     source='bin2c winexesvc64.exe')
 
-bld.program(target='winexe',
-    source='winexe.c svcinstall.c async.c winexesvc32_exe.c winexesvc64_exe.c',
-    includes=bld.env.SAMBA_INCS,
-    libpath=bld.env.SAMBA_LIBS,
-    rpath=bld.env.SAMBA_LIBS,
-    lib='talloc popt dcerpc dcerpc-samba errors cli-ldap',
-    )
+if not bld.env.DISABLE_SHARED:
+    bld.program(target='winexe',
+        source='winexe.c svcinstall.c async.c winexesvc32_exe.c winexesvc64_exe.c',
+        includes=bld.env.SAMBA_INCS,
+        libpath=bld.env.SAMBA_LIBS,
+        rpath=bld.env.SAMBA_LIBS,
+        lib='talloc popt dcerpc dcerpc-samba errors cli-ldap',
+        )
 
 if bld.env.SAMBA_DIR:
     bld.program(target='winexe-static',

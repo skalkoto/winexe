@@ -14,6 +14,7 @@ def options(ctx):
     g.add_option('--samba-dir', action='store', help='samba sources directory location, providing it enables static linking', dest='SAMBA_DIR')
     g.add_option('--samba-inc-dirs', action='store', help='directories containing samba headers', dest='SAMBA_INCS')
     g.add_option('--samba-lib-dirs', action='store', help='directories containing samba shared libraries not available on default lib dirs', dest='SAMBA_LIBS')
+    g.add_option('--disable-shared', action='store_true', help='disable of build shared winexe', dest='DISABLE_SHARED')
 
 def distclean(ctx):
     import shutil
@@ -50,8 +51,12 @@ def configure(ctx):
 
     ctx.msg('SAMBA_LIBS set to', ctx.env.SAMBA_LIBS)
 
-    for h in 'samba_util.h core/error.h credentials.h dcerpc.h gen_ndr/ndr_svcctl_c.h popt.h smb_cli.h smb_cliraw.h smb_composite.h tevent.h util/debug.h'.split():
-        ctx.check(includes=ctx.env.SAMBA_INCS, msg='Checking for ' + h, mandatory=False, fragment='''
+    if ctx.options.DISABLE_SHARED:
+        ctx.env.DISABLE_SHARED = True
+
+    try:
+        for h in 'samba_util.h core/error.h credentials.h dcerpc.h gen_ndr/ndr_svcctl_c.h popt.h smb_cli.h smb_cliraw.h smb_composite.h tevent.h util/debug.h'.split():
+            ctx.check(includes=ctx.env.SAMBA_INCS, msg='Checking for ' + h, fragment='''
             #include <stdint.h>
             #include <stdbool.h>
             #if %d
@@ -60,10 +65,16 @@ def configure(ctx):
             #endif
             #include <%s>
             int main() {return 0;}
-        ''' % (h in 'smb_cli.h smb_cliraw.h smb_composite.h util/debug.h'.split(), h))
+            ''' % (h in 'smb_cli.h smb_cliraw.h smb_composite.h util/debug.h'.split(), h))
 
-    for l in 'cli-ldap dcerpc dcerpc-samba errors popt talloc'.split():
-        ctx.check(lib=l, libpath=ctx.env.SAMBA_LIBS, mandatory=False)
+        for l in 'cli-ldap dcerpc dcerpc-samba errors popt talloc'.split():
+          ctx.check(lib=l, libpath=ctx.env.SAMBA_LIBS)
+    except:
+        ctx.msg('Build of shared winexe', 'disabled', 'YELLOW')
+        ctx.env.DISABLE_SHARED = True
+
+    if ctx.env.DISABLE_SHARED and not ctx.env.SAMBA_DIR:
+        ctx.fatal('Cannot continue! Please install required files for shared winexe or provide samba source path for static winexe(--samba-dir option).')
 
     ctx.setenv('win32', ctx.env)
     ctx.find_program([ a + '-' + t + '-gcc' for a in AR32 for t in TC], var='CC_WIN32')
