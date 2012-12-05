@@ -1,45 +1,32 @@
-README -- winexe with waf build system
-======================================
+winexe
+======
 
 Build instructions
 ------------------
-We use waf for building.  At the configure stage you can choose either the default
-(viz., to build against public Samba 4 headers and libraries) or the option of
-building against the Samba 4 source tree.
 
-As of 20 March 2012 it is possible to compile against public Samba 4 alpha18
-headers but not to link against public Samba 4 alpha18 libraries which are missing
-some symbols; so to build a working winexe the second alternative must be chosen.
+Instruction is for Ubuntu 12.10, but similar steps can be performed on any other distribution.
 
-Install 32 and 64-bit cross-(to-Windows)-compilers.  E.g., on Ubuntu 11.10
+Install build dependencies:
 
-    sudo aptitude install gcc-mingw-w64
+    sudo apt-get install gcc-mingw-w64
 
-After cloning the winexe tree, e.g.,
+Install dependencies for shared version:
 
-    git clone git://winexe.git.sourceforge.net/gitroot/winexe/winexe-waf
+    sudo apt-get install ...
 
-also obtain the Samba 4 source tree.
+Download samba sources for static version:
 
-    cd winexe-waf
-    git submodule update --init samba
+    git clone git://git.samba.org/samba.git samba
 
-Configure and build.
+Build shared version:
 
     cd source
-    ./waf configure --use-samba-tree-headers
-    ./waf build
+    ./waf configure
+    ./waf
 
-If you are a developer then edit stuff, commit and push.
+For static version you should pass location of samba dir:
 
-    git commit -a
-    git pull
-    git push git+ssh://USERNAME@winexe.git.sourceforge.net/gitroot/winexe/winexe-waf
-
-Later you may want to update the Samba 4 source tree.
-
-    cd samba
-    git pull
+    ./waf configure --samba-dir=...
 
 Credits
 -------
@@ -51,7 +38,3 @@ Contributions by:
 License
 -------
 Please see the COPYING file for the text of the GNU GPL version 3.
-
-TODO
-----
-* In waf configure, should search for w32 runtime files like windows.h
