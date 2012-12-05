@@ -13,7 +13,8 @@ Install build dependencies:
 
 Install dependencies for shared version:
 
-    sudo apt-get install ...
+    sudo apt-get install libdcerpc-dev libpopt-dev libsamba-credentials-dev libsamba-util-dev libsmbclient-raw-dev libtevent-dev samba4-dev
+    sudo apt-get install libtalloc-dev
 
 Download samba sources for static version:
 
