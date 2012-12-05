@@ -4,7 +4,8 @@ winexe
 Build instructions
 ------------------
 
-Instruction is for Ubuntu 12.10, but similar steps can be performed on any other distribution.
+Instruction is for Ubuntu 12.10,
+but similar steps can be performed on any other distribution.
 
 Install build dependencies:
 
@@ -27,6 +28,15 @@ Build shared version:
 For static version you should pass location of samba dir:
 
     ./waf configure --samba-dir=...
+
+Build system try to find paths to includes/libs,
+but you can provide it directly using configuration options:
+    --samba-inc-dirs
+    --samba-lib-dirs
+
+If you are interested only in static version of winexe
+you can use configuration option:
+    --disable-shared
 
 Credits
 -------
