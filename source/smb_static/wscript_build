@@ -45,7 +45,6 @@ bld(
     features       = 'cc cstaticlib patch_bldpath',
     source         = [],
     target         = binname,
-    target_dir     = Options.SCRIPT_DIR + '/../build',
     samba_deps     = deps,
     samba_includes = '',
     top            = True,

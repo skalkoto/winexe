@@ -19,7 +19,8 @@ def options(ctx):
 def distclean(ctx):
     import shutil
     if ctx.options.SAMBA_DIR:
-        shutil.rmtree(ctx.options.SAMBA_DIR + "/bin", ignore_errors=True)
+        shutil.rmtree(ctx.options.SAMBA_DIR + '/bin', ignore_errors=True)
+    shutil.rmtree('smb_static/build', ignore_errors=True)
     shutil.rmtree(out, ignore_errors=True)
 
 def configure(ctx):
@@ -29,7 +30,8 @@ def configure(ctx):
         ctx.env.SAMBA_DIR = os.path.abspath(ctx.options.SAMBA_DIR)
         waf = ctx.env.SAMBA_DIR + '/buildtools/bin/waf'
         ctx.find_program(waf)
-        os.system('cd smb_static && %s configure && %s --targets=smb_static' % (waf, waf))
+        if not os.path.exists('smb_static/build/libsmb_static.a'):
+            os.system('cd smb_static && %s configure && %s --targets=smb_static' % (waf, waf))
 
     if ctx.options.DISABLE_SHARED:
         ctx.env.DISABLE_SHARED = True
@@ -77,7 +79,7 @@ def configure(ctx):
     if ctx.env.SAMBA_DIR:
         try:
             for l in 'smb_static popt com_err bsd z resolv rt dl'.split():
-               ctx.check(lib=l, libpath=ctx.bldnode.abspath())
+               ctx.check(lib=l, libpath=ctx.srcnode.abspath() + '/smb_static/build')
         except:
             ctx.msg('Build of static winexe', 'disabled', 'YELLOW')
             ctx.env.SAMBA_DIR = None

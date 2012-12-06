@@ -13,13 +13,18 @@ os.chdir(SAMBA_DIR)
 execfile("wscript")
 Options.launch_dir = os.getcwd()
 Options.SCRIPT_DIR = SCRIPT_DIR
+Options.BUILD_DIR = Options.SCRIPT_DIR + '/build'
 
 from TaskGen import feature, after
 @feature('patch_bldpath')
 @after('apply_link')
 def patch_bldpath(self):
     t = self.link_task.outputs[0]
-    p = '%s/%s' % (self.target_dir, t.file())
+    try:
+        os.makedirs(Options.BUILD_DIR)
+    except:
+        pass
+    p = Options.BUILD_DIR + '/' + t.file()
     t.bldpath = lambda e=None: p
     t.abspath = lambda e=None: p
     t.nice_path = lambda e=None: p
