@@ -7,14 +7,19 @@ Build instructions
 Instruction is for Ubuntu 12.10,
 but similar steps can be performed on any other distribution.
 
-Install build dependencies:
+Install common dependencies:
 
     sudo apt-get install gcc-mingw-w64
 
 Install dependencies for shared version:
 
-    sudo apt-get install libdcerpc-dev libpopt-dev libsamba-credentials-dev libsamba-util-dev libsmbclient-raw-dev libtevent-dev samba4-dev
-    sudo apt-get install libtalloc-dev
+    sudo apt-get install libdcerpc-dev libpopt-dev libsamba-credentials-dev
+    sudo apt-get install libsamba-util-dev libsmbclient-raw-dev libtevent-dev
+    sudo apt-get install samba4-dev libtalloc-dev
+
+Install dependencies for static version:
+
+    sudo apt-get install comerr-dev libpopt-dev libbsd-dev zlib1g-dev libc6-dev
 
 Download samba sources for static version:
 
