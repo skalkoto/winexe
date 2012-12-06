@@ -29,49 +29,58 @@ def configure(ctx):
         ctx.env.SAMBA_DIR = os.path.abspath(ctx.options.SAMBA_DIR)
         waf = ctx.env.SAMBA_DIR + '/buildtools/bin/waf'
         ctx.find_program(waf)
-        os.system('cd smb_static && %s configure && %s --targets=smb_static' % (waf, waf))
-
-    if ctx.options.SAMBA_INCS:
-        ctx.env.SAMBA_INCS = ctx.options.SAMBA_INCS
-    else:
-        ctx.env.SAMBA_INCS = '/usr/include/samba-4.0'
-
-    ctx.msg('SAMBA_INCS set to', ctx.env.SAMBA_INCS)
-
-    if ctx.options.SAMBA_LIBS:
-        ctx.env.SAMBA_LIBS = ctx.options.SAMBA_LIBS
-    else:
-        from subprocess import check_output
-        for subdir in 'samba private'.split():
-            p = check_output(['gcc', '-print-file-name=%s/libcli-ldap.so' % (subdir)]).rstrip()
-            if not os.path.exists(p):
-                continue
-            ctx.env.SAMBA_LIBS = os.path.abspath(p + '/..')
-            break
-
-    ctx.msg('SAMBA_LIBS set to', ctx.env.SAMBA_LIBS)
+#        os.system('cd smb_static && %s configure && %s --targets=smb_static' % (waf, waf))
 
     if ctx.options.DISABLE_SHARED:
         ctx.env.DISABLE_SHARED = True
 
-    try:
-        for h in 'samba_util.h core/error.h credentials.h dcerpc.h gen_ndr/ndr_svcctl_c.h popt.h smb_cli.h smb_cliraw.h smb_composite.h tevent.h util/debug.h'.split():
-            ctx.check(includes=ctx.env.SAMBA_INCS, msg='Checking for ' + h, fragment='''
-            #include <stdint.h>
-            #include <stdbool.h>
-            #if %d
-            #include <samba_util.h>
-            #include <core/error.h>
-            #endif
-            #include <%s>
-            int main() {return 0;}
-            ''' % (h in 'smb_cli.h smb_cliraw.h smb_composite.h util/debug.h'.split(), h))
+    if not ctx.env.DISABLE_SHARED:
+        if ctx.options.SAMBA_INCS:
+            ctx.env.SAMBA_INCS = ctx.options.SAMBA_INCS
+        else:
+            ctx.env.SAMBA_INCS = '/usr/include/samba-4.0'
 
-        for l in 'cli-ldap dcerpc dcerpc-samba errors popt talloc'.split():
-          ctx.check(lib=l, libpath=ctx.env.SAMBA_LIBS)
-    except:
-        ctx.msg('Build of shared winexe', 'disabled', 'YELLOW')
-        ctx.env.DISABLE_SHARED = True
+        ctx.msg('SAMBA_INCS set to', ctx.env.SAMBA_INCS)
+
+        if ctx.options.SAMBA_LIBS:
+            ctx.env.SAMBA_LIBS = ctx.options.SAMBA_LIBS
+        else:
+            from subprocess import check_output
+            for subdir in 'samba private'.split():
+                p = check_output(['gcc', '-print-file-name=%s/libcli-ldap.so' % (subdir)]).rstrip()
+                if not os.path.exists(p):
+                    continue
+                ctx.env.SAMBA_LIBS = os.path.abspath(p + '/..')
+                break
+
+        ctx.msg('SAMBA_LIBS set to', ctx.env.SAMBA_LIBS)
+
+        try:
+            for h in 'samba_util.h core/error.h credentials.h dcerpc.h gen_ndr/ndr_svcctl_c.h popt.h smb_cli.h smb_cliraw.h smb_composite.h tevent.h util/debug.h'.split():
+                ctx.check(includes=ctx.env.SAMBA_INCS, msg='Checking for ' + h, fragment='''
+                #include <stdint.h>
+                #include <stdbool.h>
+                #if %d
+                #include <samba_util.h>
+                #include <core/error.h>
+                #endif
+                #include <%s>
+                int main() {return 0;}
+                ''' % (h in 'smb_cli.h smb_cliraw.h smb_composite.h util/debug.h'.split(), h))
+
+            for l in 'cli-ldap dcerpc dcerpc-samba errors popt talloc'.split():
+               ctx.check(lib=l, libpath=ctx.env.SAMBA_LIBS)
+        except:
+            ctx.msg('Build of shared winexe', 'disabled', 'YELLOW')
+            ctx.env.DISABLE_SHARED = True
+
+    if ctx.env.SAMBA_DIR:
+        try:
+            for l in 'smb_static popt com_err bsd z resolv rt dl'.split():
+               ctx.check(lib=l, libpath=ctx.bldnode.abspath())
+        except:
+            ctx.msg('Build of static winexe', 'disabled', 'YELLOW')
+            ctx.env.SAMBA_DIR = None
 
     if ctx.env.DISABLE_SHARED and not ctx.env.SAMBA_DIR:
         ctx.fatal('Cannot continue! Please install required files for shared winexe or provide samba source path for static winexe(--samba-dir option).')
