@@ -18,7 +18,7 @@ struct list_item {
 	char data[0];
 };
 
-struct list {
+struct data_list {
 	struct list_item *begin;
 	struct list_item *end;
 };
@@ -39,7 +39,7 @@ struct async_context {
 	union smb_close *io_close;
 	struct smbcli_request *rreq;
 	struct smbcli_request *wreq;
-	struct list wq;
+	struct data_list wq;
 	char buffer[256];
 };
 

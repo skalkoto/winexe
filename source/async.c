@@ -21,7 +21,7 @@
 
 static int async_read(struct async_context *c);
 
-static void list_enqueue(struct list *l, const void *data, int size)
+static void list_enqueue(struct data_list *l, const void *data, int size)
 {
 	struct list_item *li =
 	    talloc_size(0, sizeof(struct list_item) + size);
@@ -35,7 +35,7 @@ static void list_enqueue(struct list *l, const void *data, int size)
 	l->end = li;
 }
 
-static void list_dequeue(struct list *l)
+static void list_dequeue(struct data_list *l)
 {
 	struct list_item *li = l->begin;
 	if (!li)
