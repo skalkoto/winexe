@@ -18,8 +18,6 @@ except:
 binname = 'smb_static'
 source=''
 deps='dcerpc POPT_SAMBA POPT_CREDENTIALS'
-cflags='-ffunction-sections'
-ldflags='-Wl,--gc-sections'
 obj_target=binname + '.objlist'
 
 # configure library as non-shared
@@ -32,7 +30,6 @@ bld.SAMBA_SUBSYSTEM(
     obj_target,
     source         = source,
     deps           = deps,
-    cflags         = cflags,
     group          = 'main',
     )
 
@@ -48,5 +45,4 @@ bld(
     samba_deps     = deps,
     samba_includes = '',
     top            = True,
-    samba_ldflags  = TO_LIST(ldflags)
     )
