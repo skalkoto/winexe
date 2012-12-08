@@ -18,6 +18,16 @@ Options.launch_dir = os.getcwd()
 Options.SCRIPT_DIR = SCRIPT_DIR
 Options.BUILD_DIR = Options.SCRIPT_DIR + '/build'
 
+def distclean(ctx):
+    try:
+        import shutil
+        shutil.rmtree(Options.BUILD_DIR, ignore_errors=True)
+        os.unlink(Options.SCRIPT_DIR + '/' + LOCK_FILE)
+    except:
+        pass
+    import Scripting
+    Scripting.distclean(ctx)
+
 from TaskGen import feature, after
 @feature('patch_bldpath')
 @after('apply_link')

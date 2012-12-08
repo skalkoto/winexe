@@ -17,11 +17,13 @@ def options(ctx):
     g.add_option('--disable-shared', action='store_true', help='disable of build shared winexe', dest='DISABLE_SHARED')
 
 def distclean(ctx):
-    import shutil
-    if ctx.options.SAMBA_DIR:
-        shutil.rmtree(ctx.options.SAMBA_DIR + '/bin', ignore_errors=True)
-    shutil.rmtree('smb_static/build', ignore_errors=True)
-    shutil.rmtree(out, ignore_errors=True)
+    try:
+        SAMBA_DIR = os.path.abspath(os.readlink('smb_static/.lock-wscript') + '/..')
+        os.system('cd smb_static && ' + SAMBA_DIR + '/buildtools/bin/waf distclean')
+    except:
+        pass
+    import waflib.Scripting
+    waflib.Scripting.distclean(ctx)
 
 def configure(ctx):
     ctx.load('compiler_c')
