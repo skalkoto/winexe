@@ -38,6 +38,6 @@ if bld.env.SAMBA_DIR:
         cflags='-pthread',
         linkflags='-pthread',
         stlibpath=bld.srcnode.abspath() + '/smb_static/build',
-        stlib='smb_static popt com_err bsd z resolv rt',
+        stlib='smb_static bsd z resolv rt',
         lib='dl'
         )

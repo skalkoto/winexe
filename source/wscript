@@ -33,7 +33,7 @@ def configure(ctx):
         waf = ctx.env.SAMBA_DIR + '/buildtools/bin/waf'
         ctx.find_program(waf)
         if not os.path.exists('smb_static/build/libsmb_static.a'):
-            os.system('cd smb_static && %s configure && %s --targets=smb_static' % (waf, waf))
+            os.system('cd smb_static && %s configure --bundled-libraries=ALL && %s --targets=smb_static' % (waf, waf))
 
     if ctx.options.DISABLE_SHARED:
         ctx.env.DISABLE_SHARED = True
