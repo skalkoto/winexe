@@ -6,8 +6,11 @@ SCRIPT_DIR = os.path.abspath('.')
 SAMBA_DIR = os.path.abspath(sys.argv[0] + '/../../..')
 
 LOCK_FILE = '.lock-wscript'
-if not os.path.islink(LOCK_FILE):
-    os.symlink(SAMBA_DIR + '/' + LOCK_FILE, LOCK_FILE)
+try:
+    os.unlink(LOCK_FILE)
+except:
+    pass
+os.symlink(SAMBA_DIR + '/' + LOCK_FILE, LOCK_FILE)
 
 os.chdir(SAMBA_DIR)
 execfile("wscript")
