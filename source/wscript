@@ -49,9 +49,9 @@ def configure(ctx):
         if ctx.options.SAMBA_LIBS:
             ctx.env.SAMBA_LIBS = ctx.options.SAMBA_LIBS
         else:
-            from subprocess import check_output
+            import subprocess
             for subdir in 'samba private'.split():
-                p = check_output(['gcc', '-print-file-name=%s/libcli-ldap.so' % (subdir)]).rstrip()
+                p = subprocess.Popen(['gcc', '-print-file-name=%s/libcli-ldap.so' % (subdir)], stdout=subprocess.PIPE).communicate()[0].rstrip()
                 if not os.path.exists(p):
                     continue
                 ctx.env.SAMBA_LIBS = os.path.abspath(p + '/..')
