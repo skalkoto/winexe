@@ -1,55 +1,74 @@
 winexe
 ======
 
-Build instructions
-------------------
+These instructions are for Ubuntu 12.10, but a similar procedure can be
+followed for another distribution.
 
-Instruction is for Ubuntu 12.10,
-but similar steps can be performed on any other distribution.
+Winexe makes use of Samba 4.  Winexe can be built dynamically, resulting
+in an executable less than one megabyte in size which is linked against
+Samba 4 shared libraries, or statically, incorporating Samba 4 components
+into an executable that is several megabytes in size.
 
-Install common dependencies:
+First get software required for either kind of build.
 
     sudo apt-get install gcc-mingw-w64
 
-Install dependencies for shared version:
+Instructions for shared-library build
+-------------------------------------
+
+Get dependencies.
 
     sudo apt-get install libdcerpc-dev libpopt-dev libsamba-credentials-dev
     sudo apt-get install libsamba-util-dev libsmbclient-raw-dev libtevent-dev
     sudo apt-get install samba4-dev libtalloc-dev
 
-Install dependencies for static version:
-
-    sudo apt-get install comerr-dev libpopt-dev libbsd-dev zlib1g-dev libc6-dev
-
-Download samba sources for static version:
-
-    git clone git://git.samba.org/samba.git samba
-
-Build shared version:
+Build.
 
     cd source
     ./waf configure
     ./waf
 
-For static version you should pass location of samba dir:
+Run.
 
-    ./waf configure --samba-dir=...
+    build/winexe --help
 
-Build system try to find paths to includes/libs,
-but you can provide it directly using configuration options:
-    --samba-inc-dirs
-    --samba-lib-dirs
+Instructions for static build
+-----------------------------
 
-If you are interested only in static version of winexe
-you can use configuration option:
-    --disable-shared
+Get dependencies, including the Samba 4 source tree which in this example
+is downloaded to the present working directory.
+
+    sudo apt-get install comerr-dev libpopt-dev libbsd-dev zlib1g-dev libc6-dev
+    git clone git://git.samba.org/samba.git samba
+
+Build. The argument of the "samba-dir" option is the path to the samba source
+tree that was just downloaded. The "configure" step takes a long time because
+it builds Samba 4.
+
+    cd source
+    ./waf configure --samba-dir=../samba
+    ./waf
+
+Run.
+
+    build/winexe-static --help
+
+The build system tries to find paths to headers and libraries, but you
+can also specify these as follows.
+
+    ./waf configure --samba-dir=../samba --samba-inc-dirs=...  --samba-lib-dirs=...
+
+If you are interested only in the static version of winexe then
+you can use "disable-shared" configuration option.
+
+    ./waf configure --samba-dir=../samba --disable-shared
 
 Credits
 -------
 Written by Andrzej Hajda <andrzej.hajda@wp.pl>
 
-Contributions by:
-* Thomas Hood, RAAF Technology <thomas@raaftech.nl>
+Contributions were made by:
+* Thomas Hood, RAAF Technology bv, Netherlands <thomas@raaftech.nl>
 
 License
 -------
