@@ -5,7 +5,7 @@ winexe \- execute a remote Windows command
 .B winexe
 [\fIOPTION\fR]... //\fIHOST\fR \fICOMMAND\fR
 .SH DESCRIPTION
-Execute COMMAND on remote Microsoft Windows HOST.
+Execute \fICOMMAND\fR on remote Microsoft Windows \fIHOST\fR.
 .SH OPTIONS
 .TP
 \fB\-?\fR, \fB\-\-help
@@ -31,17 +31,24 @@ Install 32-bit (\fB0\fR); 64-bit (\fB1\fR); or automatically chosen (\fB2\fR) ve
 Uninstall the winexe service from the remote machine and install it again before using it to execute the command.
 .TP
 \fB\-\-runas=\fR[\fIDOMAIN\fR/]\fIUSERNAME\fR[%\fIPASSWORD\fR]
-Run as the given login \fIUSER\fR with optional \fIDOMAIN\fR and \fIPASSWORD\fR.
+Run the desired command under account \fIUSERNAME\fR
+with optional \fIDOMAIN\fR and \fIPASSWORD\fR.
 Beware: the password it sent in cleartext!
 .TP
 \fB\-\-runas\-file=\fR\fIFILE\fR
-Run as the user given in \fIFILE\fR.
+Run the desired command under the account defined in \fIFILE\fR.
 .TP
 \fB\-\-system\fR
-Use the system account.
+Use the "\fBSYSTEM\fR" account. If \fB\-\-runas\fR is given then this option is ignored.
 .TP
-\fB\-U\fR, \fB\-\-user=\fR[\fIDOMAIN\fR]\fIUSER\fR[\fB%\fR\fIPASSWORD\fR]
-Select login \fIUSER\fR name and optionally also \fIDOMAIN\fR and \fIPASSWORD\fR.
+\fB\-U\fR, \fB\-\-user=\fR[\fIDOMAIN\fR]\fIUSERNAME\fR[\fB%\fR\fIPASSWORD\fR]
+Set the login \fIUSERNAME\fR
+and optionally also \fIDOMAIN\fR and \fIPASSWORD\fR.
+The login account is used to log into the Windows host
+and start the winexe service which,
+in turn,
+executes the desired command.
+Beware: the password it sent in cleartext!
 .TP
 \fB\-\-uninstall\fR
 Uninstall the winexe service from the remote machine after using it to execute the command.
