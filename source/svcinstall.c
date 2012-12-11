@@ -278,7 +278,7 @@ NTSTATUS svc_install(struct tevent_context *ev_ctx,
 	struct dcerpc_pipe *svc_pipe;
 	struct policy_handle scm_handle;
 	struct policy_handle svc_handle;
-	int need_start;
+	int need_start = 0;
 
 	status = svc_pipe_connect(ev_ctx, &svc_pipe, hostname, credentials, cllp_ctx);
 	NT_ERR(status, 1, "Cannot connect to svcctl pipe");
