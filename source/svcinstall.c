@@ -247,7 +247,7 @@ static NTSTATUS svc_UploadService(struct tevent_context *ev_ctx,
 	if (flags & SVC_OSCHOOSE) {
 	    status = smbcli_chkpath(cli->tree, "SysWoW64");
 	}
-	if ((flags & SVC_OSCHOOSE && NT_STATUS_IS_OK(status)) || (flags & SVC_OS64BIT)) {
+	if (((flags & SVC_OSCHOOSE) && NT_STATUS_IS_OK(status)) || (flags & SVC_OS64BIT)) {
 		DEBUG(1, ("svc_UploadService: Installing 64bit %s\n", service_filename));
 		io->in.data = svc64_exe;
 		io->in.size = svc64_exe_len;

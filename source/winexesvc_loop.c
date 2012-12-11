@@ -597,4 +597,5 @@ DWORD WINAPI winexesvc_loop(LPVOID lpParameter)
 		}
 	}
 	SvcDebugOut("server_loop: STH wrong\n", 0);
+	return 0;
 }
