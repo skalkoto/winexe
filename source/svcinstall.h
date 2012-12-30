@@ -12,6 +12,7 @@
 #define SVC_OSCHOOSE 16
 #define SVC_UNINSTALL 32
 #define SVC_SYSTEM 64
+#define SVC_PROFILE 128
 
 NTSTATUS svc_install(struct tevent_context *ev_ctx, 
                      const char *hostname,

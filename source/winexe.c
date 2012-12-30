@@ -68,6 +68,7 @@ static void parse_args(int argc, char *argv[], struct program_options *options)
 	int flag_uninstall = 0;
 	int flag_system = 0;
 	int flag_help = 0;
+	int flag_profile = 0;
 	char *opt_user = NULL;
 	char *opt_kerberos = NULL;
 	char *opt_auth_file = NULL;
@@ -85,6 +86,7 @@ static void parse_args(int argc, char *argv[], struct program_options *options)
 		  "Reinstall winexe service before remote execution", NULL},
 		{ "system", 0, POPT_ARG_NONE, &flag_system, 0,
 		  "Use SYSTEM account" , NULL},
+		{ "profile", 0, POPT_ARG_NONE, &flag_profile, 0, "Load user profile", NULL},
 		{ "runas", 0, POPT_ARG_STRING, &options->runas, 0,
 		  "Run as user (BEWARE: password is sent in cleartext over net)" , "[DOMAIN\\]USERNAME%PASSWORD"},
 		{ "runas-file", 0, POPT_ARG_STRING, &options->runas_file, 0,
@@ -169,6 +171,8 @@ static void parse_args(int argc, char *argv[], struct program_options *options)
 		options->flags |= SVC_UNINSTALL;
 	if (flag_system)
 		options->flags |= SVC_SYSTEM;
+	if (flag_profile)
+		options->flags |= SVC_PROFILE;
 }
 
 enum {STATE_OPENING, STATE_GETTING_VERSION, STATE_RUNNING, STATE_CLOSING, STATE_CLOSING_FOR_REINSTALL };
@@ -308,11 +312,13 @@ static void on_ctrl_pipe_read(struct winexe_context *c, const char *data, int le
 			async_close(c->ac_ctrl);
 			c->state = STATE_CLOSING_FOR_REINSTALL;
 		} else {
-			char *str;
+			char *str = "";
+			if (c->args->flags & SVC_PROFILE)
+				str = "set profile 1\n";
 			if (c->args->runas)
-				str = talloc_asprintf(c, "set runas %s\nrun %s\n", c->args->runas, c->args->cmd);
+				str = talloc_asprintf(c, "%sset runas %s\nrun %s\n", str, c->args->runas, c->args->cmd);
 			else
-				str = talloc_asprintf(c, "%srun %s\n", (c->args->flags & SVC_SYSTEM) ? "set system 1\n" : "" , c->args->cmd);
+				str = talloc_asprintf(c, "%s%srun %s\n", str, (c->args->flags & SVC_SYSTEM) ? "set system 1\n" : "" , c->args->cmd);
 			DEBUG(1, ("CTRL: Sending command: %s", str));
 			async_write(c->ac_ctrl, str, strlen(str));
 			talloc_free(str);
