@@ -3,11 +3,13 @@
 bld.program(target='winexesvc32.exe',
     source='winexesvc_launch.c winexesvc_loop.c',
     linkflags='-s',
+    lib='userenv',
     env=bld.all_envs['win32'])
 
 bld.program(target='winexesvc64.exe',
     source='winexesvc_launch.c winexesvc_loop.c',
     linkflags='-s',
+    lib='userenv',
     env=bld.all_envs['win64'])
 
 bld.program(target='bin2c',

@@ -6,6 +6,7 @@
 
 #include <windows.h>
 #include <aclapi.h>
+#include <userenv.h>
 
 #include <stdio.h>
 #include <string.h>
@@ -144,6 +145,7 @@ typedef struct {
 	HANDLE token;
 	int implevel;
 	int system;
+	int profile;
 	char *runas;
 	int conn_number;
 } connection_context;
@@ -160,6 +162,7 @@ static int cmd_set(connection_context *c)
 	static const char* var_system = "system";
 	static const char* var_implevel = "implevel";
 	static const char* var_runas = "runas";
+	static const char* var_profile = "profile";
 	char *cmdline;
 	int res = 0;
 
@@ -175,6 +178,9 @@ static int cmd_set(connection_context *c)
 	} else if ((strstr(cmdline, var_implevel) == cmdline) &&
             (cmdline[l = strlen(var_implevel)] == ' ')) {
 		c->implevel = atoi(cmdline + l + 1);
+	} else if ((strstr(cmdline, var_profile) == cmdline) &&
+            (cmdline[l = strlen(var_profile)] == ' ')) {
+		c->profile = atoi(cmdline + l + 1);
 	} else if ((strstr(cmdline, var_runas) == cmdline) &&
             (cmdline[l = strlen(var_runas)] == ' ')) {
 		c->runas = strdup(cmdline + l + 1);
@@ -289,6 +295,18 @@ finish:
 	return res;
 }
 
+static int load_user_profile(connection_context *c)
+{
+	PROFILEINFO pi = { .dwSize = sizeof(PROFILEINFO) };
+	DWORD ulen = 256;
+	TCHAR username[ulen];
+
+	GetUserName(username, &ulen);
+	pi.lpUserName = username;
+
+	return LoadUserProfile(c->token, &pi);
+}
+
 static int cmd_run(connection_context *c)
 {
 	char buf[256];
@@ -380,6 +398,9 @@ static int cmd_run(connection_context *c)
 	SetHandleInformation(c->pin, HANDLE_FLAG_INHERIT, 1);
 	SetHandleInformation(c->pout, HANDLE_FLAG_INHERIT, 1);
 	SetHandleInformation(c->perr, HANDLE_FLAG_INHERIT, 1);
+
+	if (c->profile)
+		load_user_profile(c);
 
 	SECURITY_ATTRIBUTES sattr;
 	sattr.nLength = sizeof(SECURITY_ATTRIBUTES);
