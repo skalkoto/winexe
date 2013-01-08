@@ -19,6 +19,8 @@
 #include <smb_cliraw.h>
 #include <smb_cli.h>
 #include <dcerpc.h>
+#include <iconv.h>
+#include <errno.h>
 
 #define TEVENT_CONTEXT_INIT tevent_context_init
 
@@ -69,6 +71,7 @@ static void parse_args(int argc, char *argv[], struct program_options *options)
 	int flag_system = 0;
 	int flag_help = 0;
 	int flag_profile = 0;
+	int flag_convert = 0;
 	char *opt_user = NULL;
 	char *opt_kerberos = NULL;
 	char *opt_auth_file = NULL;
@@ -87,6 +90,8 @@ static void parse_args(int argc, char *argv[], struct program_options *options)
 		{ "system", 0, POPT_ARG_NONE, &flag_system, 0,
 		  "Use SYSTEM account" , NULL},
 		{ "profile", 0, POPT_ARG_NONE, &flag_profile, 0, "Load user profile", NULL},
+		{ "convert", 0, POPT_ARG_NONE, &flag_convert, 0,
+		  "Try to convert characters between local and remote code-pages", NULL},
 		{ "runas", 0, POPT_ARG_STRING, &options->runas, 0,
 		  "Run as user (BEWARE: password is sent in cleartext over net)" , "[DOMAIN\\]USERNAME%PASSWORD"},
 		{ "runas-file", 0, POPT_ARG_STRING, &options->runas_file, 0,
@@ -173,12 +178,16 @@ static void parse_args(int argc, char *argv[], struct program_options *options)
 		options->flags |= SVC_SYSTEM;
 	if (flag_profile)
 		options->flags |= SVC_PROFILE;
+	if (flag_convert)
+		options->flags |= SVC_CONVERT;
 }
 
 enum {STATE_OPENING, STATE_GETTING_VERSION, STATE_RUNNING, STATE_CLOSING, STATE_CLOSING_FOR_REINSTALL };
 
 struct winexe_context {
 	int state;
+	iconv_t iconv_enc;
+	iconv_t iconv_dec;
 	struct program_options *args;
 	struct smbcli_tree *tree;
 	struct async_context *ac_ctrl;
@@ -262,7 +271,7 @@ static void timer_handler(struct tevent_context *ev, struct tevent_timer *te, st
 
 static void on_ctrl_pipe_open(struct winexe_context *c)
 {
-	char *str = "get version\n";
+	char *str = (c->args->flags & SVC_CONVERT) ? "get codepage\nget version\n" : "get version\n";
 
 	DEBUG(1, ("CTRL: Sending command: %s", str));
 	c->state = STATE_GETTING_VERSION;
@@ -272,11 +281,20 @@ static void on_ctrl_pipe_open(struct winexe_context *c)
 	tevent_add_timer(c->tree->session->transport->ev, c, timeval_current_ofs(0, 10000), (tevent_timer_handler_t)timer_handler, c);
 }
 
+const char *codepage_to_string(int cp)
+{
+	switch (cp) {
+	case 850: return "CP850";
+	case 852: return "CP852";
+	default: return "CP850";
+	}
+}
+
 static void on_ctrl_pipe_read(struct winexe_context *c, const char *data, int len)
 {
 	const char *p;
+	DEBUG(1, ("CTRL: Received: %.*s", len, data));
 	if ((p = cmd_check(data, CMD_STD_IO_ERR, len))) {
-		DEBUG(1, ("CTRL: Recieved command: %.*s", len, data));
 		unsigned int npipe = strtoul(p, 0, 16);
 		char *fn;
 		/* Open in */
@@ -324,6 +342,12 @@ static void on_ctrl_pipe_read(struct winexe_context *c, const char *data, int le
 			talloc_free(str);
 			c->state = STATE_RUNNING;
 		}
+	} else if ((p = cmd_check(data, "codepage", len))) {
+		int cp = strtoul(p, 0, 0);
+		const char *cp_str = codepage_to_string(cp);
+		DEBUG(1,("Creating iconv for %s\n", cp_str));
+		c->iconv_enc = iconv_open(cp_str, "UTF-8");
+		c->iconv_dec = iconv_open("UTF-8//TRANSLIT", cp_str);
 	} else if ((p = cmd_check(data, "error", len))) {
 		DEBUG(0, ("Error: %.*s", len, data));
 		if (c->state == STATE_GETTING_VERSION) {
@@ -359,10 +383,32 @@ static void on_stdin_read_event(struct tevent_context *ev,
 			     uint16_t flags,
 			     struct winexe_context *c)
 {
-	char buf[256];
+	char data[256];
 	int len;
-	if ((len = read(0, &buf, sizeof(buf))) > 0) {
-		async_write(c->ac_in, buf, len);
+	if ((len = read(0, &data, sizeof(data))) > 0) {
+		if (c->iconv_enc == (iconv_t)(-1)) {
+			async_write(c->ac_in, data, len);
+			return;
+		}
+
+		char *pdata = data;
+		size_t l = len;
+		while (l > 0) {
+			char buf[4096];
+			char *p = buf;
+			size_t left = sizeof(buf);
+
+			size_t nchars = iconv(c->iconv_enc, (char **)&pdata, &l, &p, &left);
+
+			if (p - buf > 0)
+				async_write(c->ac_in, buf, p - buf);
+			if (nchars == -1) {
+				DEBUG(9, ("Could not convert: \"%.*s\", errno=%d\n", (int)l, pdata, errno));
+				async_write(c->ac_in, pdata, l);
+				return;
+			}
+
+		}
 	} else {
 		usleep(10);
 	}
@@ -380,9 +426,34 @@ static void on_in_pipe_open(struct winexe_context *c)
 	setbuf(stdin, NULL);
 }
 
+static void write_conv_buf(int fd, struct winexe_context *c, const char *data, int len)
+{
+	if (c->iconv_dec == (iconv_t)(-1)) {
+		write(fd, data, len);
+		return;
+	}
+
+	size_t l = len;
+	while (l > 0) {
+		char buf[4096];
+		char *p = buf;
+		size_t left = sizeof(buf);
+
+		size_t nchars = iconv(c->iconv_dec, (char **)&data, &l, &p, &left);
+
+		write(fd, buf, p - buf);
+		if (nchars == -1) {
+			DEBUG(9, ("Could not convert: \"%.*s\", errno=%d\n", (int)l, data, errno));
+			write(1, data, l);
+			return;
+		}
+
+	}
+}
+
 static void on_out_pipe_read(struct winexe_context *c, const char *data, int len)
 {
-	write(1, data, len);
+	write_conv_buf(1, c, data, len);
 }
 
 static void on_in_pipe_error(struct winexe_context *c, int func, NTSTATUS status)
@@ -397,7 +468,7 @@ static void on_out_pipe_error(struct winexe_context *c, int func, NTSTATUS statu
 
 static void on_err_pipe_read(struct winexe_context *c, const char *data, int len)
 {
-	write(2, data, len);
+	write_conv_buf(2, c, data, len);
 }
 
 static void on_err_pipe_error(struct winexe_context *c, int func, NTSTATUS status)
@@ -480,6 +551,8 @@ int main(int argc, char *argv[])
 	c->args = &options;
 	c->return_code = 99;
 	c->state = STATE_OPENING;
+	c->iconv_dec = (iconv_t)-1;
+	c->iconv_enc = (iconv_t)-1;
 	async_open(c->ac_ctrl, "\\pipe\\" PIPE_NAME, OPENX_MODE_ACCESS_RDWR);
 
 	tevent_loop_wait(cli_tree->session->transport->ev);

@@ -211,7 +211,7 @@ static int cmd_get(connection_context *c)
 		hprintf(c->pipe, "version 0x%04X\n", VERSION);
 	} else if ((strstr(cmdline, var_codepage) == cmdline) &&
 	            (cmdline[l = strlen(var_codepage)] == 0)) {
-		hprintf(c->pipe, "codepage 0x%04X\n", GetOEMCP());
+		hprintf(c->pipe, "codepage %d\n", GetOEMCP());
 	} else {
 		hprintf(c->pipe, "error Unknown argument (%s)\n", c->cmd);
 	    goto finish;
