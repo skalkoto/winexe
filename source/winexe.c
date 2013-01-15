@@ -194,10 +194,10 @@ struct winexe_context {
 	struct async_context *ac_in;
 	struct async_context *ac_out;
 	struct async_context *ac_err;
+	struct tevent_timer *ev_timeout;
+	struct tevent_fd *ev_stdin;
 	int return_code;
 };
-
-static void exit_program(struct winexe_context *c);
 
 static void on_ctrl_pipe_error(struct winexe_context *c, int func, NTSTATUS status)
 {
@@ -211,25 +211,25 @@ static void on_ctrl_pipe_error(struct winexe_context *c, int func, NTSTATUS stat
 				winexesvc32_exe, winexesvc32_exe_len,
 				winexesvc64_exe, winexesvc64_exe_len,
 				c->args->credentials, cmdline_lp_ctx, c->args->flags);
-		if (!NT_STATUS_IS_OK(status)) {
-			DEBUG(0,
-			      ("ERROR: Failed to install service winexesvc - %s\n",
-			       nt_errstr(status)));
-			c->return_code = 1;
-			exit_program(c);
+		if (NT_STATUS_IS_OK(status)) {
+			activated = 1;
+			async_open(c->ac_ctrl, "\\pipe\\" PIPE_NAME, OPENX_MODE_ACCESS_RDWR);
+			return;
 		}
-		activated = 1;
-		async_open(c->ac_ctrl, "\\pipe\\" PIPE_NAME, OPENX_MODE_ACCESS_RDWR);
+		DEBUG(0, ("ERROR: Failed to install service winexesvc - %s\n",
+		       nt_errstr(status)));
+		c->return_code = 1;
 	} else if (func == ASYNC_OPEN_RECV) {
 		DEBUG(0,
 		      ("ERROR: Cannot open control pipe - %s\n",
 		       nt_errstr(status)));
 		c->return_code = 1;
-		exit_program(c);
 	} else if (func == ASYNC_READ_RECV && c->state == STATE_OPENING) {
-		;
-	} else
-		exit_program(c);
+		return;
+	}
+
+	talloc_free(c->ev_stdin);
+	talloc_free(c->ev_timeout);
 }
 
 static void on_in_pipe_open(struct winexe_context *c);
@@ -266,7 +266,7 @@ static void timer_handler(struct tevent_context *ev, struct tevent_timer *te, st
 		fprintf(stderr, "Aborting...\n");
 		async_write(c->ac_ctrl, "abort\n", 6);
 	} else
-		tevent_add_timer(c->tree->session->transport->ev, c, timeval_current_ofs(0, 10000), (tevent_timer_handler_t)timer_handler, c);
+		c->ev_timeout = tevent_add_timer(c->tree->session->transport->ev, c, timeval_current_ofs(0, 10000), (tevent_timer_handler_t)timer_handler, c);
 }
 
 static void on_ctrl_pipe_open(struct winexe_context *c)
@@ -278,7 +278,7 @@ static void on_ctrl_pipe_open(struct winexe_context *c)
 	async_write(c->ac_ctrl, str, strlen(str));
 	signal(SIGINT, catch_alarm);
 	signal(SIGTERM, catch_alarm);
-	tevent_add_timer(c->tree->session->transport->ev, c, timeval_current_ofs(0, 10000), (tevent_timer_handler_t)timer_handler, c);
+	c->ev_timeout = tevent_add_timer(c->tree->session->transport->ev, c, timeval_current_ofs(0, 10000), (tevent_timer_handler_t)timer_handler, c);
 }
 
 const char *codepage_to_string(int cp)
@@ -416,7 +416,7 @@ static void on_stdin_read_event(struct tevent_context *ev,
 
 static void on_in_pipe_open(struct winexe_context *c)
 {
-	tevent_add_fd(c->tree->session->transport->ev,
+	c->ev_stdin = tevent_add_fd(c->tree->session->transport->ev,
 		     c->tree, 0, TEVENT_FD_READ,
 		     (tevent_fd_handler_t) on_stdin_read_event, c);
 	struct termios term;
@@ -476,14 +476,14 @@ static void on_err_pipe_error(struct winexe_context *c, int func, NTSTATUS statu
 	async_close(c->ac_err);
 }
 
-static void exit_program(struct winexe_context *c)
+static int exit_program(struct winexe_context *c)
 {
 	if (c->args->flags & SVC_UNINSTALL)
 		svc_uninstall(ev_ctx, c->args->hostname,
 			      SERVICE_NAME, SERVICE_FILENAME,
 			      c->args->credentials,
 			      cmdline_lp_ctx);
-	exit(c->return_code);
+	return c->return_code;
 }
 
 int main(int argc, char *argv[])
@@ -556,5 +556,5 @@ int main(int argc, char *argv[])
 	async_open(c->ac_ctrl, "\\pipe\\" PIPE_NAME, OPENX_MODE_ACCESS_RDWR);
 
 	tevent_loop_wait(cli_tree->session->transport->ev);
-	return 0;
+	return exit_program(c);
 }
