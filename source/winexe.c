@@ -116,7 +116,7 @@ static void parse_args(int argc, char *argv[], struct program_options *options)
 	argv_new = discard_const_p(char *, poptGetArgs(pc));
 
 	argc_new = argc;
-	for (i = 0; i < argc - 1; i++) {
+	for (i = 0; i < argc; i++) {
 		if (!argv_new || argv_new[i] == NULL) {
 			argc_new = i;
 			break;
