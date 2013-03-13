@@ -64,7 +64,7 @@ static void parse_args(int argc, char *argv[], struct program_options *options)
 	char **argv_new;
 	
 	memset(options, 0, sizeof(struct program_options));
-	int flag_interactive = 0;
+	int flag_interactive = SVC_IGNORE_INTERACTIVE;
 	int flag_ostype = 2;
 	int flag_reinstall = 0;
 	int flag_uninstall = 0;
