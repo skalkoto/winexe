@@ -506,7 +506,7 @@ int main(int argc, char *argv[])
 			      options.credentials,
 			      cmdline_lp_ctx);
 
-	if (!(options.flags & SVC_IGNORE_INTERACTIVE)) {
+	if ((options.flags & SVC_FORCE_UPLOAD) || !(options.flags & SVC_IGNORE_INTERACTIVE)) {
 		svc_install(ev_ctx, options.hostname,
 			    SERVICE_NAME, SERVICE_FILENAME,
 			    winexesvc32_exe, winexesvc32_exe_len,

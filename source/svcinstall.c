@@ -252,7 +252,7 @@ static NTSTATUS svc_UploadService(struct tevent_context *ev_ctx,
 	return status;
 }
 
-/* Start, Creates, Install service if necccesary */
+/* Start, Creates, Install service if necessary */
 NTSTATUS svc_install(struct tevent_context *ev_ctx, 
                      const char *hostname,
 		     const char *service_name, const char *service_filename,
@@ -267,21 +267,26 @@ NTSTATUS svc_install(struct tevent_context *ev_ctx,
 	struct dcerpc_pipe *svc_pipe;
 	struct policy_handle scm_handle;
 	struct policy_handle svc_handle;
+	struct SERVICE_STATUS s;
 	int need_start = 0;
+	int need_conf = 0;
 
 	status = svc_pipe_connect(ev_ctx, &svc_pipe, hostname, credentials, cllp_ctx);
 	NT_ERR(status, 1, "Cannot connect to svcctl pipe");
 	binding_handle = svc_pipe->binding_handle;
-	status = svc_UploadService(ev_ctx, hostname, service_filename,
-				   svc32_exe, svc32_exe_len,
-				   svc64_exe, svc64_exe_len,
-				   credentials, cllp_ctx, flags);
-	NT_ERR(status, 1, "UploadService failed");
+
 	status = svc_OpenSCManager(binding_handle, hostname, &scm_handle);
 	NT_ERR(status, 1, "OpenSCManager failed");
+
 	status = svc_OpenService(binding_handle, &scm_handle, service_name,
 				 &svc_handle);
 	if (NT_STATUS_EQUAL(status, NT_STATUS_SERVICE_DOES_NOT_EXIST)) {
+		status = svc_UploadService(ev_ctx, hostname, service_filename,
+					   svc32_exe, svc32_exe_len,
+					   svc64_exe, svc64_exe_len,
+					   credentials, cllp_ctx, flags);
+		NT_ERR(status, 1, "UploadService failed");
+
 		status =
 		    svc_CreateService(binding_handle, &scm_handle, service_name,
 			SERVICE_WIN32_OWN_PROCESS | 
@@ -289,40 +294,41 @@ NTSTATUS svc_install(struct tevent_context *ev_ctx,
 			service_filename, &svc_handle);
 		NT_ERR(status, 1, "CreateService failed");
 		need_start = 1;
-	} else if (NT_STATUS_IS_OK(status) && !(flags & SVC_IGNORE_INTERACTIVE)) {
-		struct SERVICE_STATUS s;
-		int what, want;
-		status = svc_QueryServiceStatus(binding_handle, &svc_handle, &s);
-		NT_ERR(status, 1, "QueryServiceStatus failed");
-		what = s.type & SERVICE_INTERACTIVE_PROCESS;
-		want = flags & SVC_INTERACTIVE;
-		if ((what && !want) || (!what && want)) {
-			need_start = 1;
-			if (s.state != SVCCTL_STOPPED) {
-				status = svc_ControlService(binding_handle, &svc_handle,
-                                       SERVICE_CONTROL_STOP, &s);
-				NT_ERR(status, 1, "StopService failed");
-			}
-			status = svc_ChangeServiceConfig(binding_handle, &svc_handle, 
-			    SERVICE_WIN32_OWN_PROCESS | 
-			    (want ? SERVICE_INTERACTIVE_PROCESS : 0),
-			    NULL);
-			NT_ERR(status, 1, "ChangeServiceConfig failed");
-			do {
-			    smb_msleep(100);
-			    status = svc_QueryServiceStatus(binding_handle, &svc_handle, &s);
-			    NT_ERR(status, 1, "QueryServiceStatus failed");
-			} while (s.state == SVCCTL_STOP_PENDING);
-		}
 	} else {
 		NT_ERR(status, 1, "OpenService failed");
 	}
-	if ((flags & SVC_IGNORE_INTERACTIVE) || need_start) {
+
+	status = svc_QueryServiceStatus(binding_handle, &svc_handle, &s);
+	NT_ERR(status, 1, "QueryServiceStatus failed");
+
+	if (!(flags & SVC_IGNORE_INTERACTIVE))
+		need_conf = !(s.type & SERVICE_INTERACTIVE_PROCESS) ^ !(flags & SVC_INTERACTIVE);
+
+	if (s.state == SVCCTL_STOPPED) {
+		need_start = 1;
+	} else if (need_conf) {
+		status = svc_ControlService(binding_handle, &svc_handle,
+                               SERVICE_CONTROL_STOP, &s);
+		NT_ERR(status, 1, "StopService failed");
+		do {
+		    smb_msleep(100);
+		    status = svc_QueryServiceStatus(binding_handle, &svc_handle, &s);
+		    NT_ERR(status, 1, "QueryServiceStatus failed");
+		} while (s.state == SVCCTL_STOP_PENDING);
+		need_start = 1;
+	}
+
+	if (need_conf) {
+		status = svc_ChangeServiceConfig(binding_handle, &svc_handle,
+		    SERVICE_WIN32_OWN_PROCESS |
+		    ((flags & SVC_INTERACTIVE) ? SERVICE_INTERACTIVE_PROCESS : 0),
+		    NULL);
+		NT_ERR(status, 1, "ChangeServiceConfig failed");
+	}
+
+	if (need_start) {
 	    status = svc_StartService(binding_handle, &svc_handle);
 	    NT_ERR(status, 1, "StartService failed");
-	}
-	{
-		struct SERVICE_STATUS s;
 		do {
 			smb_msleep(100);
 			status = svc_QueryServiceStatus(binding_handle, &svc_handle, &s);
@@ -333,6 +339,7 @@ NTSTATUS svc_install(struct tevent_context *ev_ctx,
 			return NT_STATUS_UNSUCCESSFUL;
 		}
 	}
+
 	svc_CloseServiceHandle(binding_handle, &svc_handle);
 	svc_CloseServiceHandle(binding_handle, &scm_handle);
 	talloc_free(svc_pipe);
