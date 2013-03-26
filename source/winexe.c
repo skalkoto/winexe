@@ -492,6 +492,7 @@ int main(int argc, char *argv[])
 	struct smbcli_tree *cli_tree;
 	struct program_options options;
 
+	dcerpc_init();
 	cmdline_lp_ctx = loadparm_init_global(false);
  
 	parse_args(argc, argv, &options);
