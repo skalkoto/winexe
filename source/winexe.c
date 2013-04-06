@@ -182,7 +182,20 @@ static void parse_args(int argc, char *argv[], struct program_options *options)
 		options->flags |= SVC_CONVERT;
 }
 
-enum {STATE_OPENING, STATE_GETTING_VERSION, STATE_RUNNING, STATE_CLOSING, STATE_CLOSING_FOR_REINSTALL };
+enum {
+	STATE_OPENING,
+	STATE_GETTING_VERSION,
+	STATE_RUNNING,
+	STATE_CLOSING,
+	STATE_CLOSING_FOR_REINSTALL,
+	STATE_INSTALLING
+};
+
+enum {
+	RET_CODE_CTRL_PIPE_ERROR = 0xf0,
+	RET_CODE_INSTALL_ERROR = 0xf1,
+	RET_CODE_UNKNOWN_ERROR = 0xf2
+};
 
 struct winexe_context {
 	int state;
@@ -198,39 +211,6 @@ struct winexe_context {
 	struct tevent_fd *ev_stdin;
 	int return_code;
 };
-
-static void on_ctrl_pipe_error(struct winexe_context *c, int func, NTSTATUS status)
-{
-	DEBUG(1, ("ERROR: on_ctrl_pipe_error - %s\n", nt_errstr(status)));
-	static int activated = 0;
-	if (!activated
-	    && NT_STATUS_EQUAL(status, NT_STATUS_OBJECT_NAME_NOT_FOUND)) {
-		status =
-		    svc_install(ev_ctx, c->args->hostname,
-				SERVICE_NAME, SERVICE_FILENAME,
-				winexesvc32_exe, winexesvc32_exe_len,
-				winexesvc64_exe, winexesvc64_exe_len,
-				c->args->credentials, cmdline_lp_ctx, c->args->flags);
-		if (NT_STATUS_IS_OK(status)) {
-			activated = 1;
-			async_open(c->ac_ctrl, "\\pipe\\" PIPE_NAME, OPENX_MODE_ACCESS_RDWR);
-			return;
-		}
-		DEBUG(0, ("ERROR: Failed to install service winexesvc - %s\n",
-		       nt_errstr(status)));
-		c->return_code = 1;
-	} else if (func == ASYNC_OPEN_RECV) {
-		DEBUG(0,
-		      ("ERROR: Cannot open control pipe - %s\n",
-		       nt_errstr(status)));
-		c->return_code = 1;
-	} else if (func == ASYNC_READ_RECV && c->state == STATE_OPENING) {
-		return;
-	}
-
-	talloc_free(c->ev_stdin);
-	talloc_free(c->ev_timeout);
-}
 
 static void on_in_pipe_open(struct winexe_context *c);
 
@@ -279,6 +259,32 @@ static void on_ctrl_pipe_open(struct winexe_context *c)
 	signal(SIGINT, catch_alarm);
 	signal(SIGTERM, catch_alarm);
 	c->ev_timeout = tevent_add_timer(c->tree->session->transport->ev, c, timeval_current_ofs(0, 10000), (tevent_timer_handler_t)timer_handler, c);
+}
+
+static void on_ctrl_pipe_close(struct winexe_context *c)
+{
+	talloc_free(c->ev_stdin);
+	talloc_free(c->ev_timeout);
+}
+
+static void on_ctrl_pipe_error(struct winexe_context *c, int func, NTSTATUS status)
+{
+	DEBUG(1, ("ERROR: on_ctrl_pipe_error - %s\n", nt_errstr(status)));
+	if (func == ASYNC_OPEN_RECV) {
+		if (c->state == STATE_OPENING) {
+			DEBUG(1,
+		      ("ERROR: Cannot open control pipe - %s, installing service\n",
+		       nt_errstr(status)));
+			c->state = STATE_INSTALLING;
+			return;
+		}
+		DEBUG(1, ("ERROR: Control pipe - %s, closing\n", nt_errstr(status)));
+		c->state = STATE_CLOSING;
+		c->return_code = RET_CODE_CTRL_PIPE_ERROR;
+	}
+
+	talloc_free(c->ev_stdin);
+	talloc_free(c->ev_timeout);
 }
 
 const char *codepage_to_string(int cp)
@@ -357,24 +363,6 @@ static void on_ctrl_pipe_read(struct winexe_context *c, const char *data, int le
 		}
 	} else {
 		DEBUG(0, ("CTRL: Unknown command: %.*s", len, data));
-	}
-}
-
-static void on_ctrl_pipe_close(struct winexe_context *c)
-{
-	if (c->state == STATE_CLOSING_FOR_REINSTALL) {
-		DEBUG(1,("Reinstalling service\n"));
-		svc_uninstall(ev_ctx, c->args->hostname,
-			      SERVICE_NAME, SERVICE_FILENAME,
-			      c->args->credentials,
-			      cmdline_lp_ctx);
-		svc_install(ev_ctx, c->args->hostname,
-			    SERVICE_NAME, SERVICE_FILENAME,
-			    winexesvc32_exe, winexesvc32_exe_len,
-			    winexesvc64_exe, winexesvc64_exe_len,
-			    c->args->credentials, cmdline_lp_ctx, c->args->flags);
-		c->state = STATE_OPENING;
-		async_open(c->ac_ctrl, "\\pipe\\" PIPE_NAME, OPENX_MODE_ACCESS_RDWR);
 	}
 }
 
@@ -507,11 +495,13 @@ int main(int argc, char *argv[])
 			      cmdline_lp_ctx);
 
 	if ((options.flags & SVC_FORCE_UPLOAD) || !(options.flags & SVC_IGNORE_INTERACTIVE)) {
-		svc_install(ev_ctx, options.hostname,
+		status = svc_install(ev_ctx, options.hostname,
 			    SERVICE_NAME, SERVICE_FILENAME,
 			    winexesvc32_exe, winexesvc32_exe_len,
 			    winexesvc64_exe, winexesvc64_exe_len,
 			    options.credentials, cmdline_lp_ctx, options.flags);
+		if (!NT_STATUS_IS_OK(status))
+			return 1;
 	}
 
 	struct smbcli_options smb_options;
@@ -546,16 +536,41 @@ int main(int argc, char *argv[])
 	c->ac_ctrl->tree = cli_tree;
 	c->ac_ctrl->cb_ctx = c;
 	c->ac_ctrl->cb_open = (async_cb_open) on_ctrl_pipe_open;
+	c->ac_ctrl->cb_close = (async_cb_open) on_ctrl_pipe_close;
 	c->ac_ctrl->cb_read = (async_cb_read) on_ctrl_pipe_read;
 	c->ac_ctrl->cb_error = (async_cb_error) on_ctrl_pipe_error;
-	c->ac_ctrl->cb_close = (async_cb_close) on_ctrl_pipe_close;
 	c->args = &options;
-	c->return_code = 99;
-	c->state = STATE_OPENING;
+	c->return_code = RET_CODE_UNKNOWN_ERROR;
 	c->iconv_dec = (iconv_t)-1;
 	c->iconv_enc = (iconv_t)-1;
-	async_open(c->ac_ctrl, "\\pipe\\" PIPE_NAME, OPENX_MODE_ACCESS_RDWR);
+	c->state = STATE_OPENING;
+	do {
+		async_open(c->ac_ctrl, "\\pipe\\" PIPE_NAME, OPENX_MODE_ACCESS_RDWR);
 
-	tevent_loop_wait(cli_tree->session->transport->ev);
+		tevent_loop_wait(cli_tree->session->transport->ev);
+
+		if (c->state == STATE_CLOSING_FOR_REINSTALL) {
+			DEBUG(1,("Uninstalling service\n"));
+			svc_uninstall(ev_ctx, c->args->hostname,
+				      SERVICE_NAME, SERVICE_FILENAME,
+				      c->args->credentials,
+				      cmdline_lp_ctx);
+			c->state = STATE_INSTALLING;
+		}
+
+		if (c->state != STATE_INSTALLING)
+			break;
+
+		DEBUG(1,("Installing service\n"));
+		status = svc_install(ev_ctx, c->args->hostname,
+			    SERVICE_NAME, SERVICE_FILENAME,
+			    winexesvc32_exe, winexesvc32_exe_len,
+			    winexesvc64_exe, winexesvc64_exe_len,
+			    c->args->credentials, cmdline_lp_ctx, c->args->flags);
+		if (!NT_STATUS_IS_OK(status)) {
+			c->return_code = RET_CODE_INSTALL_ERROR;
+			break;
+		}
+	} while (1);
 	return exit_program(c);
 }
