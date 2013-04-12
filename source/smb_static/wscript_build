@@ -5,6 +5,10 @@ from samba_utils import *
 
 # parse samba build scripts
 SAMBA_DIR = os.path.abspath(sys.argv[0] + '/../../..')
+
+# remove sasl dependency
+bld.env['HAVE_SASL'] = None
+
 bld.RECURSE(SAMBA_DIR)
 
 # remove unnecessary python dependency from ldbsamba
