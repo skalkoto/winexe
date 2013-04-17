@@ -44,6 +44,7 @@ static const char version_message_fmt[] = "winexe version %d.%02d\nThis program 
 
 static struct tevent_context *ev_ctx;
 static struct termios termios_orig;
+static int termios_orig_is_valid = 0;
 
 struct program_options {
 	char *hostname;
@@ -410,6 +411,7 @@ static void on_in_pipe_open(struct winexe_context *c)
 		     (tevent_fd_handler_t) on_stdin_read_event, c);
 	struct termios termios_tmp;
 	tcgetattr(0, &termios_orig);
+	termios_orig_is_valid = 1;
 	termios_tmp = termios_orig;
 	termios_tmp.c_lflag &= ~ICANON;
 	tcsetattr(0, TCSANOW, &termios_tmp);
@@ -473,7 +475,8 @@ static int exit_program(struct winexe_context *c)
 			      SERVICE_NAME, SERVICE_FILENAME,
 			      c->args->credentials,
 			      cmdline_lp_ctx);
-	tcsetattr(0, TCSANOW, &termios_orig);
+	if (termios_orig_is_valid)
+		tcsetattr(0, TCSANOW, &termios_orig);
 	return c->return_code;
 }
 
