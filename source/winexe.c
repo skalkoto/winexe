@@ -43,6 +43,7 @@ extern unsigned char winexesvc64_exe[];
 static const char version_message_fmt[] = "winexe version %d.%02d\nThis program may be freely redistributed under the terms of the GNU GPLv3\n";
 
 static struct tevent_context *ev_ctx;
+static struct termios termios_orig;
 
 struct program_options {
 	char *hostname;
@@ -407,10 +408,11 @@ static void on_in_pipe_open(struct winexe_context *c)
 	c->ev_stdin = tevent_add_fd(c->tree->session->transport->ev,
 		     c->tree, 0, TEVENT_FD_READ,
 		     (tevent_fd_handler_t) on_stdin_read_event, c);
-	struct termios term;
-	tcgetattr(0, &term);
-	term.c_lflag &= ~ICANON;
-	tcsetattr(0, TCSANOW, &term);
+	struct termios termios_tmp;
+	tcgetattr(0, &termios_orig);
+	termios_tmp = termios_orig;
+	termios_tmp.c_lflag &= ~ICANON;
+	tcsetattr(0, TCSANOW, &termios_tmp);
 	setbuf(stdin, NULL);
 }
 
@@ -471,6 +473,7 @@ static int exit_program(struct winexe_context *c)
 			      SERVICE_NAME, SERVICE_FILENAME,
 			      c->args->credentials,
 			      cmdline_lp_ctx);
+	tcsetattr(0, TCSANOW, &termios_orig);
 	return c->return_code;
 }
 
