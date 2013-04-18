@@ -40,7 +40,7 @@ extern unsigned char winexesvc32_exe[];
 extern unsigned int winexesvc64_exe_len;
 extern unsigned char winexesvc64_exe[];
 
-static const char version_message_fmt[] = "winexe version %d.%02d\nThis program may be freely redistributed under the terms of the GNU GPLv3\n";
+static const char version_message_fmt[] = "winexe version %d.%d\nThis program may be freely redistributed under the terms of the GNU GPLv3\n";
 
 static struct tevent_context *ev_ctx;
 static struct termios termios_orig;
@@ -101,7 +101,7 @@ static void parse_args(int argc, char *argv[], struct program_options *options)
 		{ "interactive", 0, POPT_ARG_INT, &flag_interactive, 0,
 		  "Desktop interaction: 0 - disallow, 1 - allow. If you allow use also --system switch (Win requirement). Vista do not support this option.", "0|1"},
 		{ "ostype", 0, POPT_ARG_INT, &flag_ostype, 0,
-		  "OS type: 0 - 32bit, 1 - 64bit, 2 - winexe will decide. Determines which version (32bit/64bit) of service will be installed.", "0|1|2"},
+		  "OS type: 0 - 32-bit, 1 - 64-bit, 2 - winexe will decide. Determines which version (32-bit or 64-bit) of service will be installed.", "0|1|2"},
 		POPT_TABLEEND
 	};
 
@@ -334,7 +334,7 @@ static void on_ctrl_pipe_read(struct winexe_context *c, const char *data, int le
 	} else if ((p = cmd_check(data, "version", len))) {
 		int ver = strtoul(p, 0, 0);
 		if (ver/10 != VERSION/10) {
-			DEBUG(1, ("CTRL: Bad version of service (is %d.%02d, expected %d.%02d), reinstalling.\n", ver/100, ver%100, VERSION/100, VERSION%100));
+			DEBUG(1, ("CTRL: Bad version of service (is %d.%d, expected %d.%d), reinstalling.\n", ver/100, ver%100, VERSION/100, VERSION%100));
 			async_close(c->ac_ctrl);
 			c->state = STATE_CLOSING_FOR_REINSTALL;
 		} else {
