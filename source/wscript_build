@@ -30,7 +30,8 @@ if not bld.env.DISABLE_SHARED:
         includes=bld.env.SAMBA_INCS,
         libpath=bld.env.SAMBA_LIBS,
         rpath=bld.env.SAMBA_LIBS,
-        lib='talloc popt dcerpc dcerpc-samba errors cli-ldap',
+        lib='popt dcerpc-samba errors cli-ldap',
+        use='TALLOC DCERPC',
         )
 
 if bld.env.SAMBA_DIR:

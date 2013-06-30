@@ -39,6 +39,8 @@ def configure(ctx):
         ctx.env.DISABLE_SHARED = True
 
     if not ctx.env.DISABLE_SHARED:
+        ctx.check_cfg(package='talloc', uselib_store='TALLOC', args=['--cflags', '--libs'])
+        ctx.check_cfg(package='dcerpc', uselib_store='DCERPC', args=['--cflags', '--libs'])
         if ctx.options.SAMBA_INCS:
             ctx.env.SAMBA_INCS = ctx.options.SAMBA_INCS
         else:
