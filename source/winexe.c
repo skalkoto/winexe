@@ -74,6 +74,7 @@ static void parse_args(int argc, char *argv[], struct program_options *options)
 	int flag_help = 0;
 	int flag_profile = 0;
 	int flag_convert = 0;
+	int flag_nopass = 0;
 	char *opt_user = NULL;
 	char *opt_kerberos = NULL;
 	char *opt_auth_file = NULL;
@@ -83,6 +84,7 @@ static void parse_args(int argc, char *argv[], struct program_options *options)
 		{ "help", '?', POPT_ARG_NONE, &flag_help, 0, "Display help message" },
 		{ "user", 'U', POPT_ARG_STRING, &opt_user, 0, "Set the network username", "[DOMAIN/]USERNAME[%PASSWORD]" },
 		{ "authentication-file", 'A', POPT_ARG_STRING, &opt_auth_file, 0, "Get the credentials from a file", "FILE" },
+		{ "no-pass", 'N', POPT_ARG_NONE, &flag_nopass, 0, "Don't ask for a password", NULL },
 		{ "kerberos", 'k', POPT_ARG_STRING, &opt_kerberos, 0, "Use Kerberos, -k [yes|no]" },
 		{ "debuglevel", 'd', POPT_ARG_STRING, &opt_debuglevel, 0, "Set debug level", "DEBUGLEVEL" },
 		{ "uninstall", 0, POPT_ARG_NONE, &flag_uninstall, 0,
@@ -141,6 +143,11 @@ static void parse_args(int argc, char *argv[], struct program_options *options)
 	else if (opt_auth_file)
 		cli_credentials_parse_file(options->credentials, opt_auth_file, CRED_SPECIFIED);
 	cli_credentials_guess(options->credentials, cmdline_lp_ctx);
+	if (!options->credentials->password && !flag_nopass) {
+		char *p = getpass("Enter password: ");
+		if (*p)
+			options->credentials->password = talloc_strdup(options->credentials, p);
+	}
 
 	if (opt_kerberos)
 		cli_credentials_set_kerberos_state(options->credentials,
@@ -580,3 +587,4 @@ int main(int argc, char *argv[])
 	} while (1);
 	return exit_program(c);
 }
+
