@@ -1,0 +1,18 @@
+#!/usr/bin/make -f
+
+export DEB_BUILD_HARDENING=1
+export DEB_BUILD_HARDENING_RELRO=1
+export DEB_BUILD_HARDENING_FORTIFY=1
+
+%:
+	dh $@ --sourcedirectory=source
+
+override_dh_auto_configure:
+	cd source && ./waf configure
+
+override_dh_auto_build:
+	cd source && ./waf
+
+override_dh_auto_test override_dh_usrlocal override_dh_installinit override_dh_auto_install:
+		:
+

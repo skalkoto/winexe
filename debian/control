@@ -1,0 +1,30 @@
+Source: winexe
+Section: net
+Priority: extra
+Maintainer: Nikos Skalkotos <skalkoto@grnet.gr>
+Build-Depends: debhelper (>= 9), 
+               autoconf (>= 2.53),
+               python (>= 2.4.2), 
+               python-dev,
+               samba4-dev (>= 4.0.0~beta2),
+               libsamba-util-dev,
+               libdcerpc-dev,
+               libpopt-dev,
+               libsamba-credentials-dev,
+               libsmbclient-raw-dev,
+               libtevent-dev,
+               libtalloc-dev,
+               gcc-mingw-w64
+Standards-Version: 3.9.4
+Homepage: http://sourceforge.net/projects/winexe/
+Vcs-Git: git://winexe.git.sourceforge.net/gitroot/winexe/winexe
+Vcs-Browser: http://winexe.git.sourceforge.net/git/gitweb-index.cgi
+
+Package: winexe
+Architecture: linux-any
+Depends: ${misc:Depends},
+         ${shlibs:Depends}
+Description: Remote Windows command executor
+ This package contains the winexe program which allows
+ the user to execute arbitrary cmd.exe commands on a remote
+ Windows machine.
