@@ -74,6 +74,7 @@ static void parse_args(int argc, char *argv[], struct program_options *options)
 	int flag_help = 0;
 	int flag_profile = 0;
 	int flag_convert = 0;
+	int flag_nopass = 0;
 	char *opt_user = NULL;
 	char *opt_kerberos = NULL;
 	char *opt_auth_file = NULL;
@@ -83,6 +84,7 @@ static void parse_args(int argc, char *argv[], struct program_options *options)
 		{ "help", '?', POPT_ARG_NONE, &flag_help, 0, "Display help message" },
 		{ "user", 'U', POPT_ARG_STRING, &opt_user, 0, "Set the network username", "[DOMAIN/]USERNAME[%PASSWORD]" },
 		{ "authentication-file", 'A', POPT_ARG_STRING, &opt_auth_file, 0, "Get the credentials from a file", "FILE" },
+		{ "no-pass", 'N', POPT_ARG_NONE, &flag_nopass, 0, "Don't ask for a password", NULL },
 		{ "kerberos", 'k', POPT_ARG_STRING, &opt_kerberos, 0, "Use Kerberos, -k [yes|no]" },
 		{ "debuglevel", 'd', POPT_ARG_STRING, &opt_debuglevel, 0, "Set debug level", "DEBUGLEVEL" },
 		{ "uninstall", 0, POPT_ARG_NONE, &flag_uninstall, 0,
@@ -141,6 +143,11 @@ static void parse_args(int argc, char *argv[], struct program_options *options)
 	else if (opt_auth_file)
 		cli_credentials_parse_file(options->credentials, opt_auth_file, CRED_SPECIFIED);
 	cli_credentials_guess(options->credentials, cmdline_lp_ctx);
+	if (!options->credentials->password && !flag_nopass) {
+		char *p = getpass("Enter password: ");
+		if (*p)
+			options->credentials->password = talloc_strdup(options->credentials, p);
+	}
 
 	if (opt_kerberos)
 		cli_credentials_set_kerberos_state(options->credentials,
@@ -311,7 +318,7 @@ static void on_ctrl_pipe_read(struct winexe_context *c, const char *data, int le
 		c->ac_in->cb_ctx = c;
 		c->ac_in->cb_open = (async_cb_open) on_in_pipe_open;
 		c->ac_in->cb_error = (async_cb_error) on_in_pipe_error;
-		fn = talloc_asprintf(c->ac_in, "\\pipe\\" PIPE_NAME_IN, npipe);
+		fn = talloc_asprintf(c->ac_in, "\\" PIPE_NAME_IN, npipe);
 		async_open(c->ac_in, fn, OPENX_MODE_ACCESS_RDWR);
 		/* Open out */
 		c->ac_out = talloc_zero(c, struct async_context);
@@ -319,7 +326,7 @@ static void on_ctrl_pipe_read(struct winexe_context *c, const char *data, int le
 		c->ac_out->cb_ctx = c;
 		c->ac_out->cb_read = (async_cb_read) on_out_pipe_read;
 		c->ac_out->cb_error = (async_cb_error) on_out_pipe_error;
-		fn = talloc_asprintf(c->ac_out, "\\pipe\\" PIPE_NAME_OUT, npipe);
+		fn = talloc_asprintf(c->ac_out, "\\" PIPE_NAME_OUT, npipe);
 		async_open(c->ac_out, fn, OPENX_MODE_ACCESS_RDWR);
 		/* Open err */
 		c->ac_err = talloc_zero(c, struct async_context);
@@ -327,7 +334,7 @@ static void on_ctrl_pipe_read(struct winexe_context *c, const char *data, int le
 		c->ac_err->cb_ctx = c;
 		c->ac_err->cb_read = (async_cb_read) on_err_pipe_read;
 		c->ac_err->cb_error = (async_cb_error) on_err_pipe_error;
-		fn = talloc_asprintf(c->ac_err, "\\pipe\\" PIPE_NAME_ERR, npipe);
+		fn = talloc_asprintf(c->ac_err, "\\" PIPE_NAME_ERR, npipe);
 		async_open(c->ac_err, fn, OPENX_MODE_ACCESS_RDWR);
 	} else if ((p = cmd_check(data, CMD_RETURN_CODE, len))) {
 		c->return_code = strtoul(p, 0, 16);
@@ -551,7 +558,7 @@ int main(int argc, char *argv[])
 	c->iconv_enc = (iconv_t)-1;
 	c->state = STATE_OPENING;
 	do {
-		async_open(c->ac_ctrl, "\\pipe\\" PIPE_NAME, OPENX_MODE_ACCESS_RDWR);
+		async_open(c->ac_ctrl, "\\" PIPE_NAME, OPENX_MODE_ACCESS_RDWR);
 
 		tevent_loop_wait(cli_tree->session->transport->ev);
 
@@ -580,3 +587,4 @@ int main(int argc, char *argv[])
 	} while (1);
 	return exit_program(c);
 }
+

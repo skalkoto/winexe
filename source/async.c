@@ -17,8 +17,6 @@
 
 #include "async.h"
 
-#define USE_OPENX_CALL
-
 static int async_read(struct async_context *c);
 
 static void list_enqueue(struct data_list *l, const void *data, int size)
@@ -101,11 +99,7 @@ static void async_open_recv(struct smbcli_request *req)
 	status = smb_raw_open_recv(req, c, c->io_open);
 	c->rreq = NULL;
 	if (NT_STATUS_IS_OK(status))
-#ifdef USE_OPENX_CALL
-		c->fd = c->io_open->openx.out.file.fnum;
-#else
 		c->fd = c->io_open->ntcreatex.out.file.fnum;
-#endif
 	talloc_free(c->io_open);
 	c->io_open = 0;
 	if (!NT_STATUS_IS_OK(status)) {
@@ -177,28 +171,20 @@ int async_open(struct async_context *c, const char *fn, int open_mode)
 	c->io_open = talloc_zero(c, union smb_open);
 	if (!c->io_open)
 		goto failed;
-#ifdef USE_OPENX_CALL
-	c->io_open->openx.level = RAW_OPEN_OPENX;
-	c->io_open->openx.in.flags = 0;
-	c->io_open->openx.in.open_mode = open_mode;
-	c->io_open->openx.in.search_attrs =
-	    FILE_ATTRIBUTE_SYSTEM | FILE_ATTRIBUTE_HIDDEN;
-	c->io_open->openx.in.file_attrs = 0;
-	c->io_open->openx.in.write_time = 0;
-	c->io_open->openx.in.open_func = 0;
-	c->io_open->openx.in.size = 0;
-	c->io_open->openx.in.timeout = 0;
-	c->io_open->openx.in.fname = fn;
-#else
 	c->io_open->ntcreatex.level = RAW_OPEN_NTCREATEX;
-        c->io_open->ntcreatex.in.flags = NTCREATEX_FLAGS_EXTENDED;
-        c->io_open->ntcreatex.in.access_mask = open_mode;
-        c->io_open->ntcreatex.in.open_disposition = NTCREATEX_DISP_OPEN;
-        c->io_open->ntcreatex.in.impersonation    = impersonation;
-        c->io_open->ntcreatex.in.create_options = NTCREATEX_OPTIONS_NON_DIRECTORY_FILE | NTCREATEX_OPTIONS_WRITE_THROUGH;
-        c->io_open->ntcreatex.in.security_flags = NTCREATEX_SECURITY_DYNAMIC | NTCREATEX_SECURITY_ALL;
-        c->io_open->ntcreatex.in.fname = fn;
-#endif
+	c->io_open->ntcreatex.in.flags = 0;
+	c->io_open->ntcreatex.in.root_fid.fnum = 0;
+	c->io_open->ntcreatex.in.access_mask =
+		SEC_STD_READ_CONTROL |
+		SEC_FILE_WRITE_ATTRIBUTE |
+		SEC_FILE_WRITE_EA |
+		SEC_FILE_READ_DATA |
+		SEC_FILE_WRITE_DATA;
+	c->io_open->ntcreatex.in.open_disposition = NTCREATEX_DISP_OPEN;
+	c->io_open->ntcreatex.in.impersonation    = NTCREATEX_IMPERSONATION_IMPERSONATION;
+	c->io_open->ntcreatex.in.create_options = NTCREATEX_OPTIONS_NON_DIRECTORY_FILE | NTCREATEX_OPTIONS_WRITE_THROUGH;
+	c->io_open->ntcreatex.in.security_flags = 0;
+	c->io_open->ntcreatex.in.fname = fn;
 	c->rreq = smb_raw_open_send(c->tree, c->io_open);
 	if (!c->rreq)
 		goto failed;
