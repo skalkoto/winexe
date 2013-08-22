@@ -318,7 +318,7 @@ static void on_ctrl_pipe_read(struct winexe_context *c, const char *data, int le
 		c->ac_in->cb_ctx = c;
 		c->ac_in->cb_open = (async_cb_open) on_in_pipe_open;
 		c->ac_in->cb_error = (async_cb_error) on_in_pipe_error;
-		fn = talloc_asprintf(c->ac_in, "\\pipe\\" PIPE_NAME_IN, npipe);
+		fn = talloc_asprintf(c->ac_in, "\\" PIPE_NAME_IN, npipe);
 		async_open(c->ac_in, fn, OPENX_MODE_ACCESS_RDWR);
 		/* Open out */
 		c->ac_out = talloc_zero(c, struct async_context);
@@ -326,7 +326,7 @@ static void on_ctrl_pipe_read(struct winexe_context *c, const char *data, int le
 		c->ac_out->cb_ctx = c;
 		c->ac_out->cb_read = (async_cb_read) on_out_pipe_read;
 		c->ac_out->cb_error = (async_cb_error) on_out_pipe_error;
-		fn = talloc_asprintf(c->ac_out, "\\pipe\\" PIPE_NAME_OUT, npipe);
+		fn = talloc_asprintf(c->ac_out, "\\" PIPE_NAME_OUT, npipe);
 		async_open(c->ac_out, fn, OPENX_MODE_ACCESS_RDWR);
 		/* Open err */
 		c->ac_err = talloc_zero(c, struct async_context);
@@ -334,7 +334,7 @@ static void on_ctrl_pipe_read(struct winexe_context *c, const char *data, int le
 		c->ac_err->cb_ctx = c;
 		c->ac_err->cb_read = (async_cb_read) on_err_pipe_read;
 		c->ac_err->cb_error = (async_cb_error) on_err_pipe_error;
-		fn = talloc_asprintf(c->ac_err, "\\pipe\\" PIPE_NAME_ERR, npipe);
+		fn = talloc_asprintf(c->ac_err, "\\" PIPE_NAME_ERR, npipe);
 		async_open(c->ac_err, fn, OPENX_MODE_ACCESS_RDWR);
 	} else if ((p = cmd_check(data, CMD_RETURN_CODE, len))) {
 		c->return_code = strtoul(p, 0, 16);
@@ -558,7 +558,7 @@ int main(int argc, char *argv[])
 	c->iconv_enc = (iconv_t)-1;
 	c->state = STATE_OPENING;
 	do {
-		async_open(c->ac_ctrl, "\\pipe\\" PIPE_NAME, OPENX_MODE_ACCESS_RDWR);
+		async_open(c->ac_ctrl, "\\" PIPE_NAME, OPENX_MODE_ACCESS_RDWR);
 
 		tevent_loop_wait(cli_tree->session->transport->ev);
 
