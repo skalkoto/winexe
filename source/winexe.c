@@ -527,14 +527,16 @@ int main(int argc, char *argv[])
 	status = smbcli_full_connection(NULL, &cli_state, options.hostname, lpcfg_smb_ports(cmdline_lp_ctx), "IPC$",
 	                            NULL, lpcfg_socket_options(cmdline_lp_ctx), options.credentials, lpcfg_resolve_context(cmdline_lp_ctx), ev_ctx,
 	            		    &smb_options, &session_options, lpcfg_gensec_settings(NULL, cmdline_lp_ctx));
-	if (cli_state)
-		cli_tree = cli_state->tree;
 	if (!NT_STATUS_IS_OK(status)) {
+		 if (status == NT_STATUS_NO_MEMORY)
+			status = NT_STATUS_OBJECT_NAME_NOT_FOUND;
 		DEBUG(0,
 		      ("ERROR: Failed to open connection - %s\n",
 		       nt_errstr(status)));
 		return 1;
 	}
+
+	cli_tree = cli_state->tree;
 
 	struct winexe_context *c =
 	    talloc_zero(NULL, struct winexe_context);
