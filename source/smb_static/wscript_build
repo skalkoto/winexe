@@ -37,7 +37,7 @@ bld.SAMBA_SUBSYSTEM(
     group          = 'main',
     )
 
-bld.SET_BUILD_GROUP('binaries')
+bld.SET_BUILD_GROUP('final')
 deps = TO_LIST(deps)
 deps.append(obj_target)
 
