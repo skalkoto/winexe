@@ -21,6 +21,7 @@
 #include <dcerpc.h>
 #include <iconv.h>
 #include <errno.h>
+#include <credentials.h>
 
 #define TEVENT_CONTEXT_INIT tevent_context_init
 
@@ -61,6 +62,7 @@ static void parse_args(int argc, char *argv[], struct program_options *options)
 {
 	poptContext pc;
 	int opt, i;
+	struct cli_credentials *cred;
 
 	int argc_new;
 	char **argv_new;
@@ -137,20 +139,21 @@ static void parse_args(int argc, char *argv[], struct program_options *options)
 	if (opt_debuglevel)
 		lpcfg_set_cmdline(cmdline_lp_ctx, "log level", opt_debuglevel);
 
-	options->credentials = cli_credentials_init(talloc_autofree_context());
+	cred = cli_credentials_init(talloc_autofree_context());
+
 	if (opt_user)
-		cli_credentials_parse_string(options->credentials, opt_user, CRED_SPECIFIED);
+		cli_credentials_parse_string(cred, opt_user, CRED_SPECIFIED);
 	else if (opt_auth_file)
-		cli_credentials_parse_file(options->credentials, opt_auth_file, CRED_SPECIFIED);
-	cli_credentials_guess(options->credentials, cmdline_lp_ctx);
-	if (!options->credentials->password && !flag_nopass) {
+		cli_credentials_parse_file(cred, opt_auth_file, CRED_SPECIFIED);
+	cli_credentials_guess(cred, cmdline_lp_ctx);
+	if (!cli_credentials_get_password(cred) && !flag_nopass) {
 		char *p = getpass("Enter password: ");
 		if (*p)
-			options->credentials->password = talloc_strdup(options->credentials, p);
+			cli_credentials_set_password(cred, p, CRED_SPECIFIED);
 	}
 
 	if (opt_kerberos)
-		cli_credentials_set_kerberos_state(options->credentials,
+		cli_credentials_set_kerberos_state(cred,
 						strcmp(opt_kerberos, "yes")
 						? CRED_MUST_USE_KERBEROS
 						: CRED_DONT_USE_KERBEROS);
@@ -159,17 +162,22 @@ static void parse_args(int argc, char *argv[], struct program_options *options)
 	if (options->runas == NULL && options->runas_file != NULL) {
 		struct cli_credentials* cred = cli_credentials_init(talloc_autofree_context());
 		cli_credentials_parse_file(cred, options->runas_file, CRED_SPECIFIED);
-		if (cred->username != NULL && cred->password != NULL) {
+		const char *user = cli_credentials_get_username(cred);
+		const char *pass = cli_credentials_get_password(cred);
+		if (user && pass) {
 			char buffer[1024];
-			if (cred->domain != NULL) {
-				snprintf(buffer, sizeof(buffer), "%s\\%s%%%s", cred->domain, cred->username, cred->password);
+			const char *dom = cli_credentials_get_domain(cred);
+			if (dom) {
+				snprintf(buffer, sizeof(buffer), "%s\\%s%%%s", dom, user, pass);
 			} else {
-				snprintf(buffer, sizeof(buffer), "%s%%%s", cred->username, cred->password);
+				snprintf(buffer, sizeof(buffer), "%s%%%s", user, pass);
 			}
 			buffer[sizeof(buffer)-1] = '\0';
 			options->runas = strdup(buffer);
 		}
 	}
+
+	options->credentials = cred;
 
 	options->hostname = argv_new[0] + 2;
 	options->cmd = argv_new[1];
