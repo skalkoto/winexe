@@ -536,7 +536,7 @@ int main(int argc, char *argv[])
 	                            NULL, lpcfg_socket_options(cmdline_lp_ctx), options.credentials, lpcfg_resolve_context(cmdline_lp_ctx), ev_ctx,
 	            		    &smb_options, &session_options, lpcfg_gensec_settings(NULL, cmdline_lp_ctx));
 	if (!NT_STATUS_IS_OK(status)) {
-		 if (status == NT_STATUS_NO_MEMORY)
+		 if (NT_STATUS_EQUAL(status, NT_STATUS_NO_MEMORY))
 			status = NT_STATUS_OBJECT_NAME_NOT_FOUND;
 		DEBUG(0,
 		      ("ERROR: Failed to open connection - %s\n",
