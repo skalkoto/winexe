@@ -74,6 +74,7 @@ static void parse_args(int argc, char *argv[], struct program_options *options)
 	int flag_uninstall = 0;
 	int flag_system = 0;
 	int flag_help = 0;
+	int flag_version = 0;
 	int flag_profile = 0;
 	int flag_convert = 0;
 	int flag_nopass = 0;
@@ -84,6 +85,7 @@ static void parse_args(int argc, char *argv[], struct program_options *options)
 
 	struct poptOption long_options[] = {
 		{ "help", '?', POPT_ARG_NONE, &flag_help, 0, "Display help message" },
+		{ "version", 'V', POPT_ARG_NONE, &flag_version, 0, "Display version number" },
 		{ "user", 'U', POPT_ARG_STRING, &opt_user, 0, "Set the network username", "[DOMAIN/]USERNAME[%PASSWORD]" },
 		{ "authentication-file", 'A', POPT_ARG_STRING, &opt_auth_file, 0, "Get the credentials from a file", "FILE" },
 		{ "no-pass", 'N', POPT_ARG_NONE, &flag_nopass, 0, "Don't ask for a password", NULL },
@@ -113,8 +115,10 @@ static void parse_args(int argc, char *argv[], struct program_options *options)
 
 	poptSetOtherOptionHelp(pc, "[OPTION]... //HOST COMMAND\nOptions:");
 
-	if (((opt = poptGetNextOpt(pc)) != -1) || flag_help) {
+	if (((opt = poptGetNextOpt(pc)) != -1) || flag_help || flag_version) {
 		DEBUG(0, (version_message_fmt, VERSION_MAJOR, VERSION_MINOR));
+		if (flag_version)
+			exit(0);
 		poptPrintHelp(pc, stdout, 0);
 		exit(1);
 	}
