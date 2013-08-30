@@ -11,10 +11,10 @@ TC = ['mingw32', 'mingw32msvc', 'w64-mingw32']
 def options(ctx):
     ctx.load('compiler_c')
     g = ctx.get_option_group('configure options')
-    g.add_option('--samba-dir', action='store', help='samba sources directory location, providing it enables static linking', dest='SAMBA_DIR')
-    g.add_option('--samba-inc-dirs', action='store', help='directories containing samba headers', dest='SAMBA_INCS')
-    g.add_option('--samba-lib-dirs', action='store', help='directories containing samba shared libraries not available on default lib dirs', dest='SAMBA_LIBS')
-    g.add_option('--disable-shared', action='store_true', help='disable of build shared winexe', dest='DISABLE_SHARED')
+    g.add_option('--samba-dir', action='store', help='build winexe against the Samba source code tree at the given location instead of building it against Samba shared libraries installed in standard locations', dest='SAMBA_DIR')
+    g.add_option('--enable-shared', action='store_true', default=False, help='build winexe against Samba shared libraries installed in standard locations in addition to building winexe statically when the samba-dir option is given', dest='ENABLE_SHARED')
+    g.add_option('--samba-inc-dirs', action='store', help='build against Samba headers in the given location', dest='SAMBA_INCS')
+    g.add_option('--samba-lib-dirs', action='store', help='build against Samba shared libraries in the given location in addition to shared libraries on the default path', dest='SAMBA_LIBS')
 
 def distclean(ctx):
     try:
@@ -34,18 +34,20 @@ def configure(ctx):
         ctx.find_program(waf)
         if not os.path.exists('smb_static/build/libsmb_static.a'):
             os.system('cd smb_static && %s configure --bundled-libraries=ALL && %s --targets=smb_static' % (waf, waf))
+        if ctx.options.ENABLE_SHARED:
+            ctx.env.ENABLE_SHARED = True
+        else:
+            ctx.env.ENABLE_SHARED = False
+    else:
+        ctx.env.ENABLE_SHARED = True
 
-    if ctx.options.DISABLE_SHARED:
-        ctx.env.DISABLE_SHARED = True
-
-    if not ctx.env.DISABLE_SHARED:
+    if ctx.env.ENABLE_SHARED:
         ctx.check_cfg(package='talloc', uselib_store='TALLOC', args=['--cflags', '--libs'])
         ctx.check_cfg(package='dcerpc', uselib_store='DCERPC', args=['--cflags', '--libs'])
         if ctx.options.SAMBA_INCS:
             ctx.env.SAMBA_INCS = ctx.options.SAMBA_INCS
         else:
             ctx.env.SAMBA_INCS = '/usr/include/samba-4.0'
-
         ctx.msg('SAMBA_INCS set to', ctx.env.SAMBA_INCS)
 
         if ctx.options.SAMBA_LIBS:
@@ -58,7 +60,6 @@ def configure(ctx):
                     continue
                 ctx.env.SAMBA_LIBS = os.path.abspath(p + '/..')
                 break
-
         ctx.msg('SAMBA_LIBS set to', ctx.env.SAMBA_LIBS)
 
         try:
@@ -78,7 +79,7 @@ def configure(ctx):
                ctx.check(lib=l, libpath=ctx.env.SAMBA_LIBS)
         except:
             ctx.msg('Build of shared winexe', 'disabled', 'YELLOW')
-            ctx.env.DISABLE_SHARED = True
+            ctx.env.ENABLE_SHARED = False
 
     if ctx.env.SAMBA_DIR:
         try:
@@ -88,7 +89,7 @@ def configure(ctx):
             ctx.msg('Build of static winexe', 'disabled', 'YELLOW')
             ctx.env.SAMBA_DIR = None
 
-    if ctx.env.DISABLE_SHARED and not ctx.env.SAMBA_DIR:
+    if not ctx.env.ENABLE_SHARED and not ctx.env.SAMBA_DIR:
         ctx.fatal('Cannot continue! Please install required files for shared winexe or provide samba source path for static winexe(--samba-dir option).')
 
     ctx.setenv('win32', ctx.env)
@@ -98,3 +99,4 @@ def configure(ctx):
     ctx.setenv('win64', ctx.env)
     ctx.find_program([ a + '-' + t + '-gcc' for a in AR64 for t in TC], var='CC_WIN64')
     ctx.env.update({"CC": ctx.env.CC_WIN64, "LINK_CC": ctx.env.CC_WIN64})
+

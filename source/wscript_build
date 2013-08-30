@@ -24,7 +24,7 @@ bld(name="bin2c", rule='${SRC[0].abspath()} winexesvc64_exe ${SRC[1]} > ${TGT} 2
     target='winexesvc64_exe.c',
     source='bin2c winexesvc64.exe')
 
-if not bld.env.DISABLE_SHARED:
+if bld.env.ENABLE_SHARED:
     bld.program(target='winexe',
         source='winexe.c svcinstall.c async.c winexesvc32_exe.c winexesvc64_exe.c',
         includes=bld.env.SAMBA_INCS,
