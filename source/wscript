@@ -75,7 +75,7 @@ def configure(ctx):
                 int main() {return 0;}
                 ''' % (h in 'smb_cli.h smb_cliraw.h smb_composite.h util/debug.h'.split(), h))
 
-            for l in 'cli-ldap dcerpc dcerpc-samba errors popt talloc'.split():
+            for l in 'cli-ldap dcerpc dcerpc-samba errors popt talloc ndr-standard samba-hostconfig samba-credentials smbclient-raw'.split():
                ctx.check(lib=l, libpath=ctx.env.SAMBA_LIBS)
         except:
             ctx.msg('Build of shared winexe', 'disabled', 'YELLOW')
