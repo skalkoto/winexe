@@ -55,7 +55,8 @@ Get dependencies, including the Samba source tree.
         libpopt-dev \
         libbsd-dev \
         zlib1g-dev \
-        libc6-dev
+        libc6-dev \
+        python-dev
     git clone git://git.samba.org/samba.git samba
 
 Build. The argument of the "samba-dir" option is the path to the samba source
