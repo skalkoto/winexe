@@ -1,23 +1,21 @@
 winexe README
 =============
 
-These instructions are for Debian 7 with APT access to the Debian
-unstable and experimental repositories.
-
-Winexe makes use of Samba version 4.
-
-Winexe can be built such that it is linked to Samba dynamically linked
-libraries, resulting in an executable less than one megabyte in size.
-
-Alternatively it can be statically linked to Samba libraries, resulting
-in an executable that is several megabytes in size. The latter version
-is still dynamically linked to a number of other libraries such as libc.
+Winexe makes use of Samba version 4. Winexe can be built such that
+it is linked to Samba dynamically linked libraries, resulting in an
+executable less than one megabyte in size.  Alternatively it can be
+statically linked to Samba libraries, resulting in an executable that
+is several megabytes in size. The latter version is still dynamically
+linked to a number of other libraries such as libc.  
 
 
 Instructions for Samba shared library build
 -------------------------------------------
 
 Get dependencies.
+
+On Debian 7 with APT access to the Debian unstable and experimental
+repositories:
 
     apt-get install \
         gcc-mingw-w64 \
@@ -49,14 +47,43 @@ Instructions for Samba static library build
 
 Get dependencies, including the Samba source tree.
 
+On Debian 7 with APT access to the Debian unstable repository:
+
     sudo apt-get install \
         gcc-mingw-w64 \
         comerr-dev \
         libpopt-dev \
-        libbsd-dev \
+        libbsd-dev \            
         zlib1g-dev \
         libc6-dev \
         python-dev
+
+On CentOS 6 with access to EPEL and auxiliary MinGW[1] repositories
+(e.g., http://www.lfarkas.org/linux/packages/centos/6/mingw-w64/)
+(THIS IS AN INCOMPLETE LIST; WORK CONTINUES):
+
+    yum install \
+        mingw-binutils-generic \
+        mingw-filesystem-base \
+        mingw32-binutils \
+        mingw32-cpp \
+        mingw32-crt \
+        mingw32-filesystem \
+        mingw32-gcc \
+        mingw32-headers \
+        mingw64-binutils \
+        mingw64-cpp \
+        mingw64-crt \
+        mingw64-filesystem \
+        mingw64-gcc \
+        mingw64-headers \
+        libcom_err-devel \
+        popt-devel \
+        libbsd-devel \
+        zlib-devel \
+        glibc-devel \
+        python-devel
+
     git clone git://git.samba.org/samba.git samba
 
 Build. The argument of the "samba-dir" option is the path to the samba source
@@ -74,12 +101,14 @@ Run.
 The build system tries to find paths to headers and libraries, but you
 can also specify these as follows.
 
-    ./waf configure --samba-dir=../samba --samba-inc-dirs=...  --samba-lib-dirs=...
+    ./waf configure --samba-dir=../samba --samba-inc-dirs=... --samba-lib-dirs=...
 
-To build the shared-library version and the static-library version at
-the same time, add the "--enable-shared" option.
+To build the shared-library version in addition to the static-library
+version, add the "--enable-shared" option.
 
     ./waf configure --samba-dir=../samba --enable-shared
+
+
 
 
 Credits
