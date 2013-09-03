@@ -81,7 +81,9 @@ On CentOS 6 with access to EPEL and auxiliary MinGW[1] repositories
         popt-devel \
         libbsd-devel \
         zlib-devel \
+        zlib-static \
         glibc-devel \
+        glibc-static \
         python-devel
 
     git clone git://git.samba.org/samba.git samba
