@@ -38,7 +38,7 @@ if bld.env.SAMBA_DIR:
     bld.program(target='winexe-static',
         source='winexe.c svcinstall.c async.c winexesvc32_exe.c winexesvc64_exe.c',
         includes=bld.env.SAMBA_DIR + '/bin/default/include/public',
-        cflags='-pthread',
+        cflags='-pthread -include ' + bld.env.SAMBA_DIR + '/bin/default/include/config.h',
         linkflags='-pthread',
         stlibpath=bld.srcnode.abspath() + '/smb_static/build',
         stlib='smb_static bsd z resolv rt',
