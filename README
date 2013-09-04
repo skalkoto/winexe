@@ -64,6 +64,7 @@ install dependencies
 
     yum install \
         gcc \
+        perl \
         mingw-binutils-generic \
         mingw-filesystem-base \
         mingw32-binutils \
