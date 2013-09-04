@@ -63,6 +63,7 @@ On RedHat-like distros including
 install dependencies
 
     yum install \
+        gcc \
         mingw-binutils-generic \
         mingw-filesystem-base \
         mingw32-binutils \
