@@ -120,6 +120,8 @@ static void parse_args(int argc, char *argv[], struct program_options *options)
 		if (flag_version)
 			exit(0);
 		poptPrintHelp(pc, stdout, 0);
+		if (flag_help)
+			exit(0);
 		exit(1);
 	}
 
