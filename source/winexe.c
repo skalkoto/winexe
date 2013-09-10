@@ -258,8 +258,11 @@ static const char *cmd_check(const char *data, const char *cmd, int len)
 
 static void catch_alarm(int sig)
 {
-	abort_requested = 1;
-	signal(sig, SIG_DFL);
+	if (++abort_requested > 1) {
+		if (termios_orig_is_valid)
+			tcsetattr(0, TCSANOW, &termios_orig);
+		exit(1);
+	}
 }
 
 static void timer_handler(struct tevent_context *ev, struct tevent_timer *te, struct timeval current_time, void *private_data)
