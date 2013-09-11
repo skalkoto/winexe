@@ -119,6 +119,39 @@ version, add the "--enable-shared" option.
     ./waf configure --samba-dir=../samba --enable-shared
 
 
+Issues
+------
+1. Winexe blocked by Windows "simple file sharing" mode
+
+Some versions of Windows operate in so-called "simple file sharing" mode.
+In this mode, when an attempt is made to access the system over the
+network using credentials that are local to that server or client,
+Windows will only provide guest level access.
+
+To fix, you have to set the "Network Access: Sharing and security model for
+local accounts" to "Classic – local users authenticate as themselves".
+Access it via Start > Run > secpol.msc > Local Policies > Security Options,
+and change "Network Access: Sharing and security model for local accounts"
+to "Classic - local users authenticate as themselves".
+
+Ref: http://itbin.blogspot.com/2010/10/psexec-logon-failure-and-access-denied.html
+
+
+2. Winexe blocked by Windows Remote User Account Control
+
+The LocalAccountTokenFilterPolicy setting affects how administrator
+credentials are applied to remotely administer the computer.
+
+To use winexe with a Windows Vista or Windows 7 machine it is
+necessary to configure a registry setting as follows.
+
+Click on the Windows "Start" icon, enter "cmd" and then press
+CTRL-SHIFT-ENTER. In the console window that subsequently opens, enter
+the following command.
+
+  reg add "HKLM\Software\Microsoft\Windows\CurrentVersion\Policies\system" /v LocalAccountTokenFilterPolicy /t REG_DWORD /d 1 /f
+
+Ref: http://support.microsoft.com/kb/942817
 
 
 Credits
@@ -126,7 +159,7 @@ Credits
 Written by Andrzej Hajda <andrzej.hajda@wp.pl>
 
 Contributions were made by:
-* Thomas Hood, RAAF Technology bv, Netherlands <thomas@raaftech.nl>
+* Thomas Hood, RAAF Technology bv <thomas@raaftech.com>
 
 License
 -------
