@@ -43,12 +43,15 @@ static int CreatePipesSA()
 	SID_IDENTIFIER_AUTHORITY SIDAuthNT = SECURITY_NT_AUTHORITY;
 
 	/* Create a SID for the BUILTIN\Administrators group. */
-	if (!AllocateAndInitializeSid(&SIDAuthNT, 2,
-				      SECURITY_BUILTIN_DOMAIN_RID,
-				      DOMAIN_ALIAS_RID_ADMINS,
-				      0, 0, 0, 0, 0, 0, &pAdminSID)) {
-		SvcDebugOut("AllocateAndInitializeSid Error %u\n",
-			    GetLastError());
+	if (
+		!AllocateAndInitializeSid(
+			&SIDAuthNT, 2,
+			SECURITY_BUILTIN_DOMAIN_RID,
+			DOMAIN_ALIAS_RID_ADMINS,
+			0, 0, 0, 0, 0, 0, &pAdminSID
+		)
+	) {
+		SvcDebugOut("AllocateAndInitializeSid Error %u\n", GetLastError());
 		return 0;
 	}
 	/* Initialize an EXPLICIT_ACCESS structure for an ACE.
@@ -68,26 +71,25 @@ static int CreatePipesSA()
 		return 0;
 	}
 	/* Initialize a security descriptor */
-	pSD =
-	    (PSECURITY_DESCRIPTOR) LocalAlloc(LPTR,
-					      SECURITY_DESCRIPTOR_MIN_LENGTH);
+	pSD = (PSECURITY_DESCRIPTOR) LocalAlloc(LPTR, SECURITY_DESCRIPTOR_MIN_LENGTH);
 	if (NULL == pSD) {
 		SvcDebugOut("LocalAlloc Error %u\n", GetLastError());
 		return 0;
 	}
 
-	if (!InitializeSecurityDescriptor
-	    (pSD, SECURITY_DESCRIPTOR_REVISION)) {
-		SvcDebugOut("InitializeSecurityDescriptor Error %u\n",
-			    GetLastError());
+	if (!InitializeSecurityDescriptor(pSD, SECURITY_DESCRIPTOR_REVISION))
+	{
+		SvcDebugOut("InitializeSecurityDescriptor Error %u\n", GetLastError());
 		return 0;
 	}
 	/* Add the ACL to the security descriptor */
-	if (!SetSecurityDescriptorDacl(pSD, TRUE,	/* bDaclPresent flag */
-				       pACL, FALSE))	/* not a default DACL */
-	{
-		SvcDebugOut("SetSecurityDescriptorDacl Error %u\n",
-			    GetLastError());
+	if (
+		!SetSecurityDescriptorDacl(
+			pSD, TRUE,  /* bDaclPresent flag */
+			pACL, FALSE  /* not a default DACL */
+		) 
+	) {
+		SvcDebugOut("SetSecurityDescriptorDacl Error %u\n", GetLastError());
 		return 0;
 	}
 	/* Initialize a security attributes structure */
@@ -172,21 +174,17 @@ static int cmd_set(connection_context *c)
 	}
 	++cmdline;
 	int l;
-	if ((strstr(cmdline, var_system) == cmdline) &&
-            (cmdline[l = strlen(var_system)] == ' ')) {
+	if ((strstr(cmdline, var_system) == cmdline) && (cmdline[l = strlen(var_system)] == ' ')) {
 		c->system = atoi(cmdline + l + 1);
-	} else if ((strstr(cmdline, var_implevel) == cmdline) &&
-            (cmdline[l = strlen(var_implevel)] == ' ')) {
+	} else if ((strstr(cmdline, var_implevel) == cmdline) && (cmdline[l = strlen(var_implevel)] == ' ')) {
 		c->implevel = atoi(cmdline + l + 1);
-	} else if ((strstr(cmdline, var_profile) == cmdline) &&
-            (cmdline[l = strlen(var_profile)] == ' ')) {
+	} else if ((strstr(cmdline, var_profile) == cmdline) && (cmdline[l = strlen(var_profile)] == ' ')) {
 		c->profile = atoi(cmdline + l + 1);
-	} else if ((strstr(cmdline, var_runas) == cmdline) &&
-            (cmdline[l = strlen(var_runas)] == ' ')) {
+	} else if ((strstr(cmdline, var_runas) == cmdline) && (cmdline[l = strlen(var_runas)] == ' ')) {
 		c->runas = strdup(cmdline + l + 1);
 	} else {
-	    hprintf(c->pipe, "error Unknown commad (%s)\n", c->cmd);
-	    goto finish;
+		hprintf(c->pipe, "error Unknown commad (%s)\n", c->cmd);
+		goto finish;
 	}
 	res = 1;
 finish:
@@ -214,7 +212,7 @@ static int cmd_get(connection_context *c)
 		hprintf(c->pipe, "codepage %d\n", GetOEMCP());
 	} else {
 		hprintf(c->pipe, "error Unknown argument (%s)\n", c->cmd);
-	    goto finish;
+		goto finish;
 	}
 	res = 1;
 finish:
@@ -236,13 +234,13 @@ static int prepare_credentials(char *str, credentials *crd)
 		*p++ = 0;
 		crd->domain = str;
 	} else {
-	        p = str;
+		p = str;
 		crd->domain = ".";
 	}
 	crd->user = p;
 	p = strchr(p, '%');
 	if (p)
-	    *p++ = 0;
+		*p++ = 0;
 	crd->password = p;
 	return 1;
 }
@@ -261,7 +259,8 @@ static int get_token(connection_context *c)
 		}
 		wres = LogonUser(crd.user, crd.domain, crd.password, LOGON32_LOGON_INTERACTIVE, LOGON32_PROVIDER_DEFAULT, &c->token);
 		if (!wres) {
-			hprintf(c->pipe, "error Cannot LogonUser(%s,%s,%s) %d\n", crd.user, crd.domain, crd.password, GetLastError());
+			hprintf(c->pipe, "error Cannot LogonUser(%s,%s,%s) %d\n",
+			        crd.user, crd.domain, crd.password, GetLastError());
 			goto finish;
 		}
 		res = 1;
@@ -332,13 +331,13 @@ static int cmd_run(connection_context *c)
 
 	sprintf(buf, "\\\\.\\pipe\\" PIPE_NAME_IN, pipe_nr);
 	c->pin = CreateNamedPipe(buf,
-			      PIPE_ACCESS_DUPLEX,
-			      PIPE_WAIT,
-			      1,
-			      BUFSIZE,
-			      BUFSIZE,
-			      NMPWAIT_USE_DEFAULT_WAIT,
-			      &sa);
+	                         PIPE_ACCESS_DUPLEX,
+	                         PIPE_WAIT,
+	                         1,
+	                         BUFSIZE,
+	                         BUFSIZE,
+	                         NMPWAIT_USE_DEFAULT_WAIT,
+	                         &sa);
 	if (c->pin == INVALID_HANDLE_VALUE) {
 		hprintf(c->pipe, "error Cannot create in pipe(%s), error 0x%08X\n", buf, GetLastError());
 		goto finishCloseToken;
@@ -346,13 +345,13 @@ static int cmd_run(connection_context *c)
 
 	sprintf(buf, "\\\\.\\pipe\\" PIPE_NAME_OUT, pipe_nr);
 	c->pout = CreateNamedPipe(buf,
-			      PIPE_ACCESS_DUPLEX,
-			      PIPE_WAIT,
-			      1,
-			      BUFSIZE,
-			      BUFSIZE,
-			      NMPWAIT_USE_DEFAULT_WAIT,
-			      &sa);
+	                          PIPE_ACCESS_DUPLEX,
+	                          PIPE_WAIT,
+	                          1,
+	                          BUFSIZE,
+	                          BUFSIZE,
+	                          NMPWAIT_USE_DEFAULT_WAIT,
+	                          &sa);
 	if (c->pout == INVALID_HANDLE_VALUE) {
 		hprintf(c->pipe, "error Cannot create out pipe(%s), error 0x%08X\n", buf, GetLastError());
 		goto finishClosePin;
@@ -360,13 +359,13 @@ static int cmd_run(connection_context *c)
 
 	sprintf(buf, "\\\\.\\pipe\\" PIPE_NAME_ERR, pipe_nr);
 	c->perr = CreateNamedPipe(buf,
-			       PIPE_ACCESS_DUPLEX,
-			       PIPE_WAIT,
-			       1,
-			       BUFSIZE,
-			       BUFSIZE,
-			       NMPWAIT_USE_DEFAULT_WAIT,
-			       &sa);
+	                          PIPE_ACCESS_DUPLEX,
+	                          PIPE_WAIT,
+	                          1,
+	                          BUFSIZE,
+	                          BUFSIZE,
+	                          NMPWAIT_USE_DEFAULT_WAIT,
+	                          &sa);
 	if (c->perr == INVALID_HANDLE_VALUE) {
 		hprintf(c->pipe, "error Cannot create err pipe(%s), error 0x%08x\n", buf, GetLastError());
 		goto finishClosePout;
@@ -376,25 +375,22 @@ static int cmd_run(connection_context *c)
 	hprintf(c->pipe, CMD_STD_IO_ERR " %08X\n", pipe_nr);
 
 	wres = ConnectNamedPipe(c->pin, NULL);
-	if (!wres)
-		wres = (GetLastError() == ERROR_PIPE_CONNECTED);
 	if (!wres) {
+		wres = (GetLastError() == ERROR_PIPE_CONNECTED);
 		hprintf(c->pipe, "error ConnectNamedPipe(pin)\n");
 		goto finishClosePerr;
 	}
 
 	wres = ConnectNamedPipe(c->pout, NULL);
-	if (!wres)
-		wres = (GetLastError() == ERROR_PIPE_CONNECTED);
 	if (!wres) {
+		wres = (GetLastError() == ERROR_PIPE_CONNECTED);
 		hprintf(c->pipe, "error ConnectNamedPipe(pout)\n");
 		goto finishDisconnectPin;
 	}
 
 	wres = ConnectNamedPipe(c->perr, NULL);
-	if (!wres)
-		wres = (GetLastError() == ERROR_PIPE_CONNECTED);
 	if (!wres) {
+		wres = (GetLastError() == ERROR_PIPE_CONNECTED);
 		hprintf(c->pipe, "error ConnectNamedPipe(perr)\n");
 		goto finishDisconnectPout;
 	}
@@ -423,25 +419,25 @@ static int cmd_run(connection_context *c)
 	si.dwFlags |= STARTF_USESTDHANDLES;
 
 	if (CreateProcessAsUser(
-			  c->token,
-			  NULL, 
-			  cmdline,	/* command line */
-			  NULL,	/* process security attributes */
-			  NULL,	/* primary thread security attributes */
-			  TRUE,	/* handles are inherited */
-			  0,	/* creation flags */
-			  NULL,	/* use parent's environment */
-			  NULL,	/* use parent's current directory */
-			  &si,	/* STARTUPINFO pointer */
-			  &pi))	/* receives PROCESS_INFORMATION */
-	{
+		c->token,
+		NULL, 
+		cmdline,	/* command line */
+		NULL,	/* process security attributes */
+		NULL,	/* primary thread security attributes */
+		TRUE,	/* handles are inherited */
+		0,	/* creation flags */
+		NULL,	/* use parent's environment */
+		NULL,	/* use parent's current directory */
+		&si,	/* STARTUPINFO pointer */
+		&pi) 	/* receives PROCESS_INFORMATION */
+	) {
 		HANDLE hlist[2] = {c->pipe->o.hEvent, pi.hProcess};
 		DWORD ec;
 		char str[1];
 		
 		if (!ResetEvent(c->pipe->o.hEvent))
 			SvcDebugOut("ResetEvent error - %d\n", GetLastError());
-                if (!ReadFile(c->pipe->h, str, 1, NULL, &c->pipe->o) && GetLastError() != ERROR_IO_PENDING)
+		if (!ReadFile(c->pipe->h, str, 1, NULL, &c->pipe->o) && GetLastError() != ERROR_IO_PENDING)
 			SvcDebugOut("ReadFile(control_pipe) error - %d\n", GetLastError());
 		ec = WaitForMultipleObjects(2, hlist, FALSE, INFINITE);
 		SvcDebugOut("WaitForMultipleObjects=%d\n", ec - WAIT_OBJECT_0);
@@ -491,16 +487,16 @@ typedef struct {
 
 static VOID handle_connection(connection_data *data)
 {
-        char *cmd = 0;
+	char *cmd = 0;
 	int res;
 	connection_context _c, *c = &_c;
-        cmd = malloc(MAX_COMMAND_LENGTH);
-        if (!cmd) {
-	    hprintf(data->pipe, 
-		    "error: unable to allocate buffer for command\n");
-	    return;
+	cmd = malloc(MAX_COMMAND_LENGTH);
+	if (!cmd) {
+		hprintf(data->pipe, 
+		        "error: unable to allocate buffer for command\n");
+		return;
 	}
-        ZeroMemory(cmd, MAX_COMMAND_LENGTH);
+	ZeroMemory(cmd, MAX_COMMAND_LENGTH);
 	ZeroMemory(c, sizeof(connection_context));
 	c->pipe = data->pipe;
 	c->cmd = cmd;
@@ -516,7 +512,8 @@ static VOID handle_connection(connection_data *data)
 		SvcDebugOut("Retrieved line: \"%s\"\n", (int)cmd);
 		CMD_ITEM *ci;
 		for (ci = cmd_table; ci->name; ++ci) {
-			if (strstr(cmd, ci->name) != cmd) continue;
+			if (strstr(cmd, ci->name) != cmd)
+				continue;
 			char c = cmd[strlen(ci->name)];
 			if (!c || (c == ' '))
 				break;
@@ -524,8 +521,9 @@ static VOID handle_connection(connection_data *data)
 		if (ci->name) {
 			if (!ci->func(c))
 				goto finish;
-		} else
+		} else {
 			hprintf(c->pipe, "error Ignoring unknown command (%s)\n", cmd);
+		}
 	}
 finish:
 	FlushFileBuffers(c->pipe->h);
@@ -533,7 +531,7 @@ finish:
 	CloseHandle(c->pipe->h);
 	CloseHandle(c->pipe->o.hEvent);
 	free(c->pipe);
-        free(cmd);
+	free(cmd);
 }
 
 static int conn_number = 0;
@@ -544,8 +542,7 @@ DWORD WINAPI winexesvc_loop(LPVOID lpParameter)
 
 	SvcDebugOut("server_loop: alive\n", 0);
 	if (!CreatePipesSA()) {
-		SvcDebugOut("CreatePipesSA failed (%08X)\n",
-			    GetLastError());
+		SvcDebugOut("CreatePipesSA failed (%08X)\n", GetLastError());
 		return -1;
 	}
 	SvcDebugOut("server_loop: CreatePipesSA done\n", 0);
@@ -556,17 +553,16 @@ DWORD WINAPI winexesvc_loop(LPVOID lpParameter)
 		ZeroMemory(&pipe->o, sizeof(OVERLAPPED));
 		pipe->o.hEvent = CreateEvent(NULL, TRUE, TRUE, NULL);
 		pipe->h = CreateNamedPipe("\\\\.\\pipe\\" PIPE_NAME,
-				       PIPE_ACCESS_DUPLEX | FILE_FLAG_OVERLAPPED,
-				       PIPE_WAIT,
-				       PIPE_UNLIMITED_INSTANCES,
-				       BUFSIZE,
-				       BUFSIZE,
-				       NMPWAIT_USE_DEFAULT_WAIT,
-				       &sa);
-
+		                          PIPE_ACCESS_DUPLEX | FILE_FLAG_OVERLAPPED,
+		                          PIPE_WAIT,
+		                          PIPE_UNLIMITED_INSTANCES,
+		                          BUFSIZE,
+		                          BUFSIZE,
+		                          NMPWAIT_USE_DEFAULT_WAIT,
+		                          &sa);
 		if (pipe->h == INVALID_HANDLE_VALUE) {
 			SvcDebugOut("CreatePipe failed(%08X)\n",
-				    GetLastError());
+			            GetLastError());
 			CloseHandle(pipe->o.hEvent);
 			free(pipe);
 			return 0;
@@ -578,16 +574,16 @@ DWORD WINAPI winexesvc_loop(LPVOID lpParameter)
 			res = FALSE;
 		} else {
 			switch (GetLastError()) {
-			case ERROR_IO_PENDING:
+			  case ERROR_IO_PENDING:
 				SvcDebugOut("server_loop: Connect Pipe(0) pending\n", 0);
 				DWORD t;
 				res = GetOverlappedResult(pipe->h, &pipe->o, &t, TRUE);
 				break;
-			case ERROR_PIPE_CONNECTED:
+			  case ERROR_PIPE_CONNECTED:
 				SvcDebugOut("server_loop: Connect Pipe(0) connected\n", 0);
 				res = TRUE;
 				break;
-			default:
+			  default:
 				SvcDebugOut("server_loop: Connect Pipe(0) err %08X\n", GetLastError());
 				res = FALSE;
 			}
@@ -599,12 +595,12 @@ DWORD WINAPI winexesvc_loop(LPVOID lpParameter)
 			cd->conn_number = ++conn_number;
 			SvcDebugOut("server_loop: CreateThread\n", 0);
 			HANDLE th = CreateThread(NULL,	/* no security attribute */
-						 0,	/* default stack size */
-						 (LPTHREAD_START_ROUTINE)
-						 handle_connection,
-						 (LPVOID) cd,	/* thread parameter */
-						 0,	/* not suspended */
-						 NULL);	/* returns thread ID */
+			                         0,	/* default stack size */
+			                         (LPTHREAD_START_ROUTINE)
+			                         handle_connection,
+			                         (LPVOID) cd,	/* thread parameter */
+			                         0,	/* not suspended */
+			                         NULL);	/* returns thread ID */
 			if (!th) {
 				SvcDebugOut("Cannot create thread\n", 0);
 				CloseHandle(pipe->h);

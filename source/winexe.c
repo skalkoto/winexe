@@ -1,7 +1,7 @@
 /*
-   Copyright (C) Andrzej Hajda 2009-2013
-   Contact: andrzej.hajda@wp.pl
-   License: GNU General Public License version 3
+  Copyright (C) Andrzej Hajda 2009-2013
+  Contact: andrzej.hajda@wp.pl
+  License: GNU General Public License version 3
 */
 
 #include <sys/fcntl.h>
@@ -66,8 +66,7 @@ static void parse_args(int argc, char *argv[], struct program_options *options)
 
 	int argc_new;
 	char **argv_new;
-	
-	memset(options, 0, sizeof(struct program_options));
+
 	int flag_interactive = SVC_IGNORE_INTERACTIVE;
 	int flag_ostype = 2;
 	int flag_reinstall = 0;
@@ -82,6 +81,8 @@ static void parse_args(int argc, char *argv[], struct program_options *options)
 	char *opt_kerberos = NULL;
 	char *opt_auth_file = NULL;
 	char *opt_debuglevel = NULL;
+	
+	memset(options, 0, sizeof(struct program_options));
 
 	struct poptOption long_options[] = {
 		{ "help", '?', POPT_ARG_NONE, &flag_help, 0, "Display help message" },
@@ -135,8 +136,7 @@ static void parse_args(int argc, char *argv[], struct program_options *options)
 		}
 	}
 
-	if (argc_new != 2 || argv_new[0][0] != '/'
-	    || argv_new[0][1] != '/') {
+	if (argc_new != 2 || argv_new[0][0] != '/' || argv_new[0][1] != '/') {
 		DEBUG(0, (version_message_fmt, VERSION_MAJOR, VERSION_MINOR));
 		poptPrintHelp(pc, stdout, 0);
 		exit(1);
@@ -160,10 +160,9 @@ static void parse_args(int argc, char *argv[], struct program_options *options)
 
 	if (opt_kerberos)
 		cli_credentials_set_kerberos_state(cred,
-						strcmp(opt_kerberos, "yes")
-						? CRED_MUST_USE_KERBEROS
-						: CRED_DONT_USE_KERBEROS);
-
+		                                   strcmp(opt_kerberos, "yes")
+		                                   ? CRED_MUST_USE_KERBEROS
+		                                   : CRED_DONT_USE_KERBEROS);
 
 	if (options->runas == NULL && options->runas_file != NULL) {
 		struct cli_credentials* cred = cli_credentials_init(talloc_autofree_context());
@@ -249,8 +248,10 @@ static const char *cmd_check(const char *data, const char *cmd, int len)
 	int lcmd = strlen(cmd);
 	if (lcmd >= len)
 		return 0;
-	if (!strncmp(data, cmd, lcmd)
-	    && (data[lcmd] == ' ' || data[lcmd] == '\n')) {
+	if (
+		!strncmp(data, cmd, lcmd)
+		&& (data[lcmd] == ' ' || data[lcmd] == '\n')
+	) {
 		return data + lcmd + 1;
 	}
 	return 0;
@@ -271,8 +272,9 @@ static void timer_handler(struct tevent_context *ev, struct tevent_timer *te, st
 	if (abort_requested) {
 		fprintf(stderr, "Aborting...\n");
 		async_write(c->ac_ctrl, "abort\n", 6);
-	} else
+	} else {
 		c->ev_timeout = tevent_add_timer(c->tree->session->transport->ev, c, timeval_current_ofs(0, 10000), (tevent_timer_handler_t)timer_handler, c);
+	}
 }
 
 static void on_ctrl_pipe_open(struct winexe_context *c)
@@ -298,9 +300,7 @@ static void on_ctrl_pipe_error(struct winexe_context *c, int func, NTSTATUS stat
 	DEBUG(1, ("ERROR: on_ctrl_pipe_error - %s\n", nt_errstr(status)));
 	if (func == ASYNC_OPEN_RECV) {
 		if (c->state == STATE_OPENING) {
-			DEBUG(1,
-		      ("ERROR: Cannot open control pipe - %s, installing service\n",
-		       nt_errstr(status)));
+			DEBUG(1, ("ERROR: Cannot open control pipe - %s, installing service\n", nt_errstr(status)));
 			c->state = STATE_INSTALLING;
 			return;
 		}
@@ -316,9 +316,9 @@ static void on_ctrl_pipe_error(struct winexe_context *c, int func, NTSTATUS stat
 const char *codepage_to_string(int cp)
 {
 	switch (cp) {
-	case 850: return "CP850";
-	case 852: return "CP852";
-	default: return "CP850";
+	  case 850: return "CP850";
+	  case 852: return "CP852";
+	  default: return "CP850";
 	}
 }
 
@@ -393,9 +393,9 @@ static void on_ctrl_pipe_read(struct winexe_context *c, const char *data, int le
 }
 
 static void on_stdin_read_event(struct tevent_context *ev,
-			     struct tevent_fd *fde,
-			     uint16_t flags,
-			     struct winexe_context *c)
+                                struct tevent_fd *fde,
+                                uint16_t flags,
+                                struct winexe_context *c)
 {
 	char data[256];
 	int len;
@@ -431,8 +431,8 @@ static void on_stdin_read_event(struct tevent_context *ev,
 static void on_in_pipe_open(struct winexe_context *c)
 {
 	c->ev_stdin = tevent_add_fd(c->tree->session->transport->ev,
-		     c->tree, 0, TEVENT_FD_READ,
-		     (tevent_fd_handler_t) on_stdin_read_event, c);
+	                            c->tree, 0, TEVENT_FD_READ,
+	                            (tevent_fd_handler_t) on_stdin_read_event, c);
 	struct termios termios_tmp;
 	tcgetattr(0, &termios_orig);
 	termios_orig_is_valid = 1;
@@ -494,11 +494,11 @@ static void on_err_pipe_error(struct winexe_context *c, int func, NTSTATUS statu
 
 static int exit_program(struct winexe_context *c)
 {
-	if (c->args->flags & SVC_UNINSTALL)
+	if (c->args->flags & SVC_UNINSTALL) {
 		svc_uninstall(ev_ctx, c->args->hostname,
-			      SERVICE_NAME, SERVICE_FILENAME,
-			      c->args->credentials,
-			      ldprm_ctx);
+		              SERVICE_NAME, SERVICE_FILENAME,
+		              c->args->credentials, ldprm_ctx);
+	}
 	if (termios_orig_is_valid)
 		tcsetattr(0, TCSANOW, &termios_orig);
 	return c->return_code;
@@ -517,18 +517,19 @@ int main(int argc, char *argv[])
 	ev_ctx = TEVENT_CONTEXT_INIT(talloc_autofree_context());
 	lpcfg_set_option(ldprm_ctx, "client ntlmv2 auth=no");
 
-	if (options.flags & SVC_FORCE_UPLOAD)
+	if (options.flags & SVC_FORCE_UPLOAD) {
 		svc_uninstall(ev_ctx, options.hostname,
-			      SERVICE_NAME, SERVICE_FILENAME,
-			      options.credentials,
-			      ldprm_ctx);
+		              SERVICE_NAME, SERVICE_FILENAME,
+		              options.credentials,
+		              ldprm_ctx);
+	}
 
 	if ((options.flags & SVC_FORCE_UPLOAD) || !(options.flags & SVC_IGNORE_INTERACTIVE)) {
 		status = svc_install(ev_ctx, options.hostname,
-			    SERVICE_NAME, SERVICE_FILENAME,
-			    winexesvc32_exe, winexesvc32_exe_len,
-			    winexesvc64_exe, winexesvc64_exe_len,
-			    options.credentials, ldprm_ctx, options.flags);
+		                     SERVICE_NAME, SERVICE_FILENAME,
+		                     winexesvc32_exe, winexesvc32_exe_len,
+		                     winexesvc64_exe, winexesvc64_exe_len,
+		                     options.credentials, ldprm_ctx, options.flags);
 		if (!NT_STATUS_IS_OK(status))
 			return 1;
 	}
@@ -540,25 +541,26 @@ int main(int argc, char *argv[])
 	lpcfg_smbcli_session_options(ldprm_ctx, &session_options);
 
 	struct smbcli_state *cli_state;
-	status = smbcli_full_connection(NULL, &cli_state, options.hostname, lpcfg_smb_ports(ldprm_ctx), "IPC$",
-	                            NULL, lpcfg_socket_options(ldprm_ctx), options.credentials, lpcfg_resolve_context(ldprm_ctx), ev_ctx,
-	            		    &smb_options, &session_options, lpcfg_gensec_settings(NULL, ldprm_ctx));
+	status = smbcli_full_connection(NULL, &cli_state, options.hostname, lpcfg_smb_ports(ldprm_ctx),
+	                                "IPC$", NULL, lpcfg_socket_options(ldprm_ctx), options.credentials,
+	                                lpcfg_resolve_context(ldprm_ctx), ev_ctx,
+	                                &smb_options, &session_options,
+	                                lpcfg_gensec_settings(NULL, ldprm_ctx));
 	if (!NT_STATUS_IS_OK(status)) {
-		 if (NT_STATUS_EQUAL(status, NT_STATUS_NO_MEMORY))
+		if (NT_STATUS_EQUAL(status, NT_STATUS_NO_MEMORY))
 			status = NT_STATUS_OBJECT_NAME_NOT_FOUND;
 		DEBUG(0,
-		      ("ERROR: Failed to open connection - %s\n",
-		       nt_errstr(status)));
+			("ERROR: Failed to open connection - %s\n",
+			nt_errstr(status)));
 		return 1;
 	}
 
 	cli_tree = cli_state->tree;
 
 	struct winexe_context *c =
-	    talloc_zero(NULL, struct winexe_context);
+		talloc_zero(NULL, struct winexe_context);
 	if (c == NULL) {
-		DEBUG(0,
-		      ("ERROR: Failed to allocate struct winexe_context\n"));
+		DEBUG(0, ("ERROR: Failed to allocate struct winexe_context\n"));
 		return 1;
 	}
 
@@ -583,9 +585,9 @@ int main(int argc, char *argv[])
 		if (c->state == STATE_CLOSING_FOR_REINSTALL) {
 			DEBUG(1,("Uninstalling service\n"));
 			svc_uninstall(ev_ctx, c->args->hostname,
-				      SERVICE_NAME, SERVICE_FILENAME,
-				      c->args->credentials,
-				      ldprm_ctx);
+			              SERVICE_NAME, SERVICE_FILENAME,
+			              c->args->credentials,
+			              ldprm_ctx);
 			c->state = STATE_INSTALLING;
 		}
 
@@ -594,15 +596,17 @@ int main(int argc, char *argv[])
 
 		DEBUG(1,("Installing service\n"));
 		status = svc_install(ev_ctx, c->args->hostname,
-			    SERVICE_NAME, SERVICE_FILENAME,
-			    winexesvc32_exe, winexesvc32_exe_len,
-			    winexesvc64_exe, winexesvc64_exe_len,
-			    c->args->credentials, ldprm_ctx, c->args->flags);
+		                     SERVICE_NAME, SERVICE_FILENAME,
+		                     winexesvc32_exe, winexesvc32_exe_len,
+		                     winexesvc64_exe, winexesvc64_exe_len,
+		                     c->args->credentials, ldprm_ctx,
+		                     c->args->flags);
 		if (!NT_STATUS_IS_OK(status)) {
 			c->return_code = RET_CODE_INSTALL_ERROR;
 			break;
 		}
 	} while (1);
+
 	return exit_program(c);
 }
 
