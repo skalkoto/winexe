@@ -1,11 +1,11 @@
 /*
-   Copyright (C) Andrzej Hajda 2009
-   Contact: andrzej.hajda@wp.pl
-   License: GNU General Public License version 3
+  Copyright (C) Andrzej Hajda 2009-2013
+  Contact: andrzej.hajda@wp.pl
+  License: GNU General Public License version 3
 */
 
 enum { ASYNC_OPEN, ASYNC_OPEN_RECV, ASYNC_READ, ASYNC_READ_RECV,
-            ASYNC_WRITE, ASYNC_WRITE_RECV, ASYNC_CLOSE, ASYNC_CLOSE_RECV };
+       ASYNC_WRITE, ASYNC_WRITE_RECV, ASYNC_CLOSE, ASYNC_CLOSE_RECV };
 
 typedef void (*async_cb_open) (void *ctx);
 typedef void (*async_cb_read) (void *ctx, const char *data, int len);

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) Andrzej Hajda 2009
+  Copyright (C) Andrzej Hajda 2009-2013
   Contact: andrzej.hajda@wp.pl
   License: GNU General Public License version 3
 */

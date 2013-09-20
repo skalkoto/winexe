@@ -1,7 +1,7 @@
 /*
-   Copyright (C) Andrzej Hajda 2009
-   Contact: andrzej.hajda@wp.pl
-   License: GNU General Public License version 3
+  Copyright (C) Andrzej Hajda 2009-2013
+  Contact: andrzej.hajda@wp.pl
+  License: GNU General Public License version 3
 */
 
 #include <windows.h>
@@ -204,11 +204,11 @@ static int cmd_get(connection_context *c)
 	}
 	++cmdline;
 	int l;
-	if ((strstr(cmdline, var_version) == cmdline) &&
-            (cmdline[l = strlen(var_version)] == 0)) {
+	if ((strstr(cmdline, var_version) == cmdline)
+	    && (cmdline[l = strlen(var_version)] == 0)) {
 		hprintf(c->pipe, "version 0x%04X\n", VERSION);
-	} else if ((strstr(cmdline, var_codepage) == cmdline) &&
-	            (cmdline[l = strlen(var_codepage)] == 0)) {
+	} else if ((strstr(cmdline, var_codepage) == cmdline)
+	           && (cmdline[l = strlen(var_codepage)] == 0)) {
 		hprintf(c->pipe, "codepage %d\n", GetOEMCP());
 	} else {
 		hprintf(c->pipe, "error Unknown argument (%s)\n", c->cmd);
