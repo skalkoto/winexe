@@ -67,9 +67,9 @@ static NTSTATUS svc_OpenSCManager(struct dcerpc_binding_handle *binding_handle,
 }
 
 static NTSTATUS svc_OpenService(struct dcerpc_binding_handle *binding_handle,
-			 struct policy_handle * pscm_handle,
-			 const char *ServiceName,
-			 struct policy_handle * psvc_handle)
+                                struct policy_handle * pscm_handle,
+                                const char *ServiceName,
+                                struct policy_handle * psvc_handle)
 {
 	NTSTATUS status;
 	struct svcctl_OpenServiceW r;
@@ -219,7 +219,7 @@ static NTSTATUS svc_UploadService(struct tevent_context *ev_ctx,
 
 	status = smbcli_full_connection(NULL, &cli, hostname, lpcfg_smb_ports(ldprm_ctx),
 	                                "ADMIN$", NULL,
-				        lpcfg_socket_options(ldprm_ctx), credentials,
+	                                lpcfg_socket_options(ldprm_ctx), credentials,
 	                                lpcfg_resolve_context(ldprm_ctx), ev_ctx,
 	                                &options, &session_options,
 	                                lpcfg_gensec_settings(NULL, ldprm_ctx));
@@ -280,8 +280,7 @@ NTSTATUS svc_install(struct tevent_context *ev_ctx,
 	status = svc_OpenSCManager(binding_handle, hostname, &scm_handle);
 	NT_ERR(status, 1, "OpenSCManager failed");
 
-	status = svc_OpenService(binding_handle, &scm_handle, service_name,
-				 &svc_handle);
+	status = svc_OpenService(binding_handle, &scm_handle, service_name, &svc_handle);
 	if (NT_STATUS_EQUAL(status, NT_STATUS_SERVICE_DOES_NOT_EXIST)) {
 		status = svc_UploadService(ev_ctx, hostname, service_filename,
 		                           svc32_exe, svc32_exe_len,
@@ -291,7 +290,7 @@ NTSTATUS svc_install(struct tevent_context *ev_ctx,
 
 		status = svc_CreateService(binding_handle, &scm_handle, service_name,
 		                           SERVICE_WIN32_OWN_PROCESS | 
-                                           (flags & SVC_INTERACTIVE ? SERVICE_INTERACTIVE_PROCESS : 0),
+		                           ((flags & SVC_INTERACTIVE) ? SERVICE_INTERACTIVE_PROCESS : 0),
 		                           service_filename, &svc_handle);
 		NT_ERR(status, 1, "CreateService failed");
 		need_start = 1;
