@@ -1,5 +1,5 @@
 /*
-   Copyright (C) Andrzej Hajda 2009
+   Copyright (C) Andrzej Hajda 2009-2013
    Contact: andrzej.hajda@wp.pl
    License: GNU General Public License version 3
 */
@@ -31,21 +31,23 @@
 
 #define SERVICE_FILENAME SERVICE_NAME ".exe"
 
-static struct loadparm_context *cmdline_lp_ctx;
+static const char version_message_fmt[] = "winexe version %d.%d\nThis program may be freely redistributed under the terms of the GNU GPLv3\n";
 
-/* winexesvc32_exe.c */
+static struct loadparm_context *ldprm_ctx;
+static struct tevent_context *ev_ctx;
+
+static struct termios termios_orig;
+static int termios_orig_is_valid = 0;
+
+static int abort_requested = 0;
+
+/* winexesvc32.exe binary blob */
 extern unsigned int winexesvc32_exe_len;
 extern unsigned char winexesvc32_exe[];
 
-/* winexesvc64_exe.c */
+/* winexesvc64.exe binary blob */
 extern unsigned int winexesvc64_exe_len;
 extern unsigned char winexesvc64_exe[];
-
-static const char version_message_fmt[] = "winexe version %d.%d\nThis program may be freely redistributed under the terms of the GNU GPLv3\n";
-
-static struct tevent_context *ev_ctx;
-static struct termios termios_orig;
-static int termios_orig_is_valid = 0;
 
 struct program_options {
 	char *hostname;
@@ -55,8 +57,6 @@ struct program_options {
 	char *runas_file;
 	int flags;
 };
-
-static int abort_requested = 0;
 
 static void parse_args(int argc, char *argv[], struct program_options *options)
 {
@@ -143,7 +143,7 @@ static void parse_args(int argc, char *argv[], struct program_options *options)
 	}
 
 	if (opt_debuglevel)
-		lpcfg_set_cmdline(cmdline_lp_ctx, "log level", opt_debuglevel);
+		lpcfg_set_cmdline(ldprm_ctx, "log level", opt_debuglevel);
 
 	cred = cli_credentials_init(talloc_autofree_context());
 
@@ -151,7 +151,7 @@ static void parse_args(int argc, char *argv[], struct program_options *options)
 		cli_credentials_parse_string(cred, opt_user, CRED_SPECIFIED);
 	else if (opt_auth_file)
 		cli_credentials_parse_file(cred, opt_auth_file, CRED_SPECIFIED);
-	cli_credentials_guess(cred, cmdline_lp_ctx);
+	cli_credentials_guess(cred, ldprm_ctx);
 	if (!cli_credentials_get_password(cred) && !flag_nopass) {
 		char *p = getpass("Enter password: ");
 		if (*p)
@@ -498,7 +498,7 @@ static int exit_program(struct winexe_context *c)
 		svc_uninstall(ev_ctx, c->args->hostname,
 			      SERVICE_NAME, SERVICE_FILENAME,
 			      c->args->credentials,
-			      cmdline_lp_ctx);
+			      ldprm_ctx);
 	if (termios_orig_is_valid)
 		tcsetattr(0, TCSANOW, &termios_orig);
 	return c->return_code;
@@ -511,25 +511,24 @@ int main(int argc, char *argv[])
 	struct program_options options;
 
 	dcerpc_init();
-	cmdline_lp_ctx = loadparm_init_global(false);
- 
+	ldprm_ctx = loadparm_init_global(false);
 	parse_args(argc, argv, &options);
 	DEBUG(1, (version_message_fmt, VERSION_MAJOR, VERSION_MINOR));
 	ev_ctx = TEVENT_CONTEXT_INIT(talloc_autofree_context());
-	lpcfg_set_option(cmdline_lp_ctx, "client ntlmv2 auth=no");
+	lpcfg_set_option(ldprm_ctx, "client ntlmv2 auth=no");
 
 	if (options.flags & SVC_FORCE_UPLOAD)
 		svc_uninstall(ev_ctx, options.hostname,
 			      SERVICE_NAME, SERVICE_FILENAME,
 			      options.credentials,
-			      cmdline_lp_ctx);
+			      ldprm_ctx);
 
 	if ((options.flags & SVC_FORCE_UPLOAD) || !(options.flags & SVC_IGNORE_INTERACTIVE)) {
 		status = svc_install(ev_ctx, options.hostname,
 			    SERVICE_NAME, SERVICE_FILENAME,
 			    winexesvc32_exe, winexesvc32_exe_len,
 			    winexesvc64_exe, winexesvc64_exe_len,
-			    options.credentials, cmdline_lp_ctx, options.flags);
+			    options.credentials, ldprm_ctx, options.flags);
 		if (!NT_STATUS_IS_OK(status))
 			return 1;
 	}
@@ -537,13 +536,13 @@ int main(int argc, char *argv[])
 	struct smbcli_options smb_options;
 	struct smbcli_session_options session_options;
 
-	lpcfg_smbcli_options(cmdline_lp_ctx, &smb_options);
-	lpcfg_smbcli_session_options(cmdline_lp_ctx, &session_options);
+	lpcfg_smbcli_options(ldprm_ctx, &smb_options);
+	lpcfg_smbcli_session_options(ldprm_ctx, &session_options);
 
 	struct smbcli_state *cli_state;
-	status = smbcli_full_connection(NULL, &cli_state, options.hostname, lpcfg_smb_ports(cmdline_lp_ctx), "IPC$",
-	                            NULL, lpcfg_socket_options(cmdline_lp_ctx), options.credentials, lpcfg_resolve_context(cmdline_lp_ctx), ev_ctx,
-	            		    &smb_options, &session_options, lpcfg_gensec_settings(NULL, cmdline_lp_ctx));
+	status = smbcli_full_connection(NULL, &cli_state, options.hostname, lpcfg_smb_ports(ldprm_ctx), "IPC$",
+	                            NULL, lpcfg_socket_options(ldprm_ctx), options.credentials, lpcfg_resolve_context(ldprm_ctx), ev_ctx,
+	            		    &smb_options, &session_options, lpcfg_gensec_settings(NULL, ldprm_ctx));
 	if (!NT_STATUS_IS_OK(status)) {
 		 if (NT_STATUS_EQUAL(status, NT_STATUS_NO_MEMORY))
 			status = NT_STATUS_OBJECT_NAME_NOT_FOUND;
@@ -586,7 +585,7 @@ int main(int argc, char *argv[])
 			svc_uninstall(ev_ctx, c->args->hostname,
 				      SERVICE_NAME, SERVICE_FILENAME,
 				      c->args->credentials,
-				      cmdline_lp_ctx);
+				      ldprm_ctx);
 			c->state = STATE_INSTALLING;
 		}
 
@@ -598,7 +597,7 @@ int main(int argc, char *argv[])
 			    SERVICE_NAME, SERVICE_FILENAME,
 			    winexesvc32_exe, winexesvc32_exe_len,
 			    winexesvc64_exe, winexesvc64_exe_len,
-			    c->args->credentials, cmdline_lp_ctx, c->args->flags);
+			    c->args->credentials, ldprm_ctx, c->args->flags);
 		if (!NT_STATUS_IS_OK(status)) {
 			c->return_code = RET_CODE_INSTALL_ERROR;
 			break;
