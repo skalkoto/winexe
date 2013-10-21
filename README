@@ -14,22 +14,13 @@ Instructions for Samba shared library build
 
 Get dependencies.
 
-On Debian 7 with APT access to the Debian unstable and experimental
-repositories:
+On Debian 7 with APT access to the Debian unstable repository:
 
     apt-get install \
+        python2.7 \
         gcc-mingw-w64 \
-        libtalloc-dev \
         libtevent-dev \
-        libpopt-dev \
-        samba-dev \
-        samba-common-bin \
-        libdcerpc-dev \
-        libsamba-credentials-dev \
-        libsamba-util-dev \
-        libsmbclient-raw-dev \
-        libndr-standard-dev \
-        libsamba-hostconfig-dev
+        samba-dev
 
 Build.
 
