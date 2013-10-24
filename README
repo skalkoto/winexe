@@ -1,43 +1,28 @@
-winexe README
-=============
+                      winexe README
+                      =============
 
-Winexe makes use of Samba version 4. Winexe can be built such that
-it is linked to Samba dynamically linked libraries, resulting in an
-executable less than one megabyte in size.  Alternatively it can be
-statically linked to Samba libraries, resulting in an executable that
-is several megabytes in size. The latter version is still dynamically
-linked to a number of other libraries such as libc.  
+Last updated 24 October 2013.
 
 
-Instructions for Samba shared library build
--------------------------------------------
+Building
+========
 
-Get dependencies.
+Winexe makes use of Samba version 4.
 
-On Debian 7 with APT access to the Debian unstable repository:
+Winexe can be built such that it is statically linked to Samba
+libraries, resulting in an executable that is several megabytes in
+size. The winexe binary is still dynamically linked to a number of
+shared libraries such as libc.  
 
-    apt-get install \
-        python2.7 \
-        gcc-mingw-w64 \
-        libtevent-dev \
-        samba-dev
-
-Build.
-
-    cd source
-    ./waf configure
-    ./waf
-
-Run.
-
-    build/winexe --help
+On some distributions winexe can be built such that it is linked to
+Samba shared libraries, resulting in an executable less than 100
+kilobytes in size.
 
 
 Instructions for Samba static library build
 -------------------------------------------
 
-On Debian 7 with APT access to the Debian unstable repository,
-install dependencies.
+On Debian Jessie install dependencies.
 
     sudo apt-get install \
         gcc-mingw-w64 \
@@ -48,10 +33,12 @@ install dependencies.
         libc6-dev \
         python-dev
 
-On RedHat-like distros including
-* Fedora 18
-* CentOS 6 with added EPEL and and lfarkas (http://www.lfarkas.org/linux/packages/centos/6/mingw-w64/) repos
-install dependencies
+On RedHat-like distros including those in the following list, install
+dependencies.
+
+    * Fedora 18
+    * CentOS 6 with added EPEL repo and lfarkas's repo
+      (http://www.lfarkas.org/linux/packages/centos/6/mingw-w64/)
 
     yum install \
         gcc \
@@ -78,18 +65,18 @@ install dependencies
         glibc-static \
         python-devel
 
-and make sure that libbsd-devel is *not* installed.
+Important: make sure that libbsd-devel is *not* installed.
 
     yum remove \
         libbsd-devel
 
-Get the Samba source code.
+Obtain the Samba source code.
 
     git clone git://git.samba.org/samba.git samba
 
-Build. The argument of the "samba-dir" option is the path to the samba source
-tree that was just downloaded. The "configure" step takes a long time because
-it builds Samba 4.
+Build. The argument of the "samba-dir" option is the path to the samba
+source tree that was just obtained. The "configure" step takes a long
+time because it builds Samba.
 
     cd source
     ./waf configure --samba-dir=../samba
@@ -104,14 +91,50 @@ can also specify these as follows.
 
     ./waf configure --samba-dir=../samba --samba-inc-dirs=... --samba-lib-dirs=...
 
-To build the shared-library version in addition to the static-library
-version, add the "--enable-shared" option.
+
+Instructions for Samba shared library build
+-------------------------------------------
+
+The following instructions are for Debian Jessie, at the time of writing
+the only distribution that has packaged Samba 4 with shared libraries.
+Even Jessie does not provide all the shared libraries needed by winexe
+as public libraries, but this can be worked around using symbolic links
+as explained below.
+
+Install dependencies.
+
+    apt-get install \
+        python2.7 \
+        gcc-mingw-w64 \
+        libtevent-dev \
+        samba-dev
+
+Add symbolic links to make private libraries available to the linker.
+
+    cd /usr/lib/x86_64-linux-gnu/samba
+    sudo ln -s libcli-ldap.so.0 libcli-ldap.so
+    sudo ln -s libdcerpc-samba.so.0 libdcerpc-samba.so
+    sudo ln -s liberrors.so.0 liberrors.so
+    sudo ldconfig
+
+Build.
+
+    cd source
+    ./waf configure
+    ./waf
+
+Run.
+
+    build/winexe --help
+
+To build the shared-library version while building the static-library
+version, use the "--enable-shared" option.
 
     ./waf configure --samba-dir=../samba --enable-shared
 
 
 Issues
-------
+======
 1. Winexe blocked by Windows "simple file sharing" mode
 
 Some versions of Windows operate in so-called "simple file sharing" mode.
@@ -119,8 +142,8 @@ In this mode, when an attempt is made to access the system over the
 network using credentials that are local to that server or client,
 Windows will only provide guest level access.
 
-To fix, you have to set the "Network Access: Sharing and security model for
-local accounts" to "Classic – local users authenticate as themselves".
+To fix, you have to set the "Network Access: Sharing and security model
+for local accounts" to "Classic – local users authenticate as themselves".
 Access it via Start > Run > secpol.msc > Local Policies > Security Options,
 and change "Network Access: Sharing and security model for local accounts"
 to "Classic - local users authenticate as themselves".
