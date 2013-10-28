@@ -282,12 +282,6 @@ NTSTATUS svc_install(struct tevent_context *ev_ctx,
 
 	status = svc_OpenService(binding_handle, &scm_handle, service_name, &svc_handle);
 	if (NT_STATUS_EQUAL(status, NT_STATUS_SERVICE_DOES_NOT_EXIST)) {
-		status = svc_UploadService(ev_ctx, hostname, service_filename,
-		                           svc32_exe, svc32_exe_len,
-		                           svc64_exe, svc64_exe_len,
-		                           credentials, ldprm_ctx, flags);
-		NT_ERR(status, 0, "UploadService failed");
-
 		status = svc_CreateService(binding_handle, &scm_handle, service_name,
 		                           SERVICE_WIN32_OWN_PROCESS | 
 		                           ((flags & SVC_INTERACTIVE) ? SERVICE_INTERACTIVE_PROCESS : 0),
@@ -327,6 +321,12 @@ NTSTATUS svc_install(struct tevent_context *ev_ctx,
 	}
 
 	if (need_start) {
+		status = svc_UploadService(ev_ctx, hostname, service_filename,
+		                           svc32_exe, svc32_exe_len,
+		                           svc64_exe, svc64_exe_len,
+		                           credentials, ldprm_ctx, flags);
+		NT_ERR(status, 0, "UploadService failed");
+
 		status = svc_StartService(binding_handle, &svc_handle);
 		NT_ERR(status, 0, "StartService failed");
 		do {
