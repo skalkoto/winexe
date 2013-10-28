@@ -223,7 +223,7 @@ static NTSTATUS svc_UploadService(struct tevent_context *ev_ctx,
 	                                lpcfg_resolve_context(ldprm_ctx), ev_ctx,
 	                                &options, &session_options,
 	                                lpcfg_gensec_settings(NULL, ldprm_ctx));
-	NT_ERR(status, 1, "Failed to open ADMIN$ share");
+	NT_ERR(status, 0, "Failed to open ADMIN$ share");
 	if (flags & SVC_FORCE_UPLOAD) {
 		smbcli_unlink(cli->tree, service_filename);
 	} else {
@@ -235,9 +235,9 @@ static NTSTATUS svc_UploadService(struct tevent_context *ev_ctx,
 	}
 	io = talloc_zero(cli->tree, struct smb_composite_savefile);
 	io->in.fname = service_filename;
-	if (flags & SVC_OSCHOOSE) {
+	if (flags & SVC_OSCHOOSE)
 		status = smbcli_chkpath(cli->tree, "SysWoW64");
-	}
+
 	if (((flags & SVC_OSCHOOSE) && NT_STATUS_IS_OK(status)) || (flags & SVC_OS64BIT)) {
 		DEBUG(1, ("svc_UploadService: Installing 64bit %s\n", service_filename));
 		io->in.data = svc64_exe;
@@ -248,7 +248,7 @@ static NTSTATUS svc_UploadService(struct tevent_context *ev_ctx,
 		io->in.size = svc32_exe_len;
 	}
 	status = smb_composite_savefile(cli->tree, io);
-	NT_ERR(status, 1, "Failed to save ADMIN$/%s", io->in.fname);
+	NT_ERR(status, 0, "Failed to save ADMIN$/%s", io->in.fname);
 	talloc_free(io);
 	smbcli_tdis(cli);
 	return status;
@@ -274,11 +274,11 @@ NTSTATUS svc_install(struct tevent_context *ev_ctx,
 	int need_conf = 0;
 
 	status = svc_pipe_connect(ev_ctx, &svc_pipe, hostname, credentials, ldprm_ctx);
-	NT_ERR(status, 1, "Cannot connect to svcctl pipe");
+	NT_ERR(status, 0, "Cannot connect to svcctl pipe");
 	binding_handle = svc_pipe->binding_handle;
 
 	status = svc_OpenSCManager(binding_handle, hostname, &scm_handle);
-	NT_ERR(status, 1, "OpenSCManager failed");
+	NT_ERR(status, 0, "OpenSCManager failed");
 
 	status = svc_OpenService(binding_handle, &scm_handle, service_name, &svc_handle);
 	if (NT_STATUS_EQUAL(status, NT_STATUS_SERVICE_DOES_NOT_EXIST)) {
@@ -286,20 +286,20 @@ NTSTATUS svc_install(struct tevent_context *ev_ctx,
 		                           svc32_exe, svc32_exe_len,
 		                           svc64_exe, svc64_exe_len,
 		                           credentials, ldprm_ctx, flags);
-		NT_ERR(status, 1, "UploadService failed");
+		NT_ERR(status, 0, "UploadService failed");
 
 		status = svc_CreateService(binding_handle, &scm_handle, service_name,
 		                           SERVICE_WIN32_OWN_PROCESS | 
 		                           ((flags & SVC_INTERACTIVE) ? SERVICE_INTERACTIVE_PROCESS : 0),
 		                           service_filename, &svc_handle);
-		NT_ERR(status, 1, "CreateService failed");
+		NT_ERR(status, 0, "CreateService failed");
 		need_start = 1;
 	} else {
-		NT_ERR(status, 1, "OpenService failed");
+		NT_ERR(status, 0, "OpenService failed");
 	}
 
 	status = svc_QueryServiceStatus(binding_handle, &svc_handle, &s);
-	NT_ERR(status, 1, "QueryServiceStatus failed");
+	NT_ERR(status, 0, "QueryServiceStatus failed");
 
 	if (!(flags & SVC_IGNORE_INTERACTIVE))
 		need_conf = !(s.type & SERVICE_INTERACTIVE_PROCESS) ^ !(flags & SVC_INTERACTIVE);
@@ -309,11 +309,11 @@ NTSTATUS svc_install(struct tevent_context *ev_ctx,
 	} else if (need_conf) {
 		status = svc_ControlService(binding_handle, &svc_handle,
 		                            SERVICE_CONTROL_STOP, &s);
-		NT_ERR(status, 1, "StopService failed");
+		NT_ERR(status, 0, "StopService failed");
 		do {
 			smb_msleep(100);
 			status = svc_QueryServiceStatus(binding_handle, &svc_handle, &s);
-			NT_ERR(status, 1, "QueryServiceStatus failed");
+			NT_ERR(status, 0, "QueryServiceStatus failed");
 		} while (s.state == SVCCTL_STOP_PENDING);
 		need_start = 1;
 	}
@@ -323,16 +323,16 @@ NTSTATUS svc_install(struct tevent_context *ev_ctx,
 		                                 SERVICE_WIN32_OWN_PROCESS |
 		                                 ((flags & SVC_INTERACTIVE) ? SERVICE_INTERACTIVE_PROCESS : 0),
 		                                 NULL);
-		NT_ERR(status, 1, "ChangeServiceConfig failed");
+		NT_ERR(status, 0, "ChangeServiceConfig failed");
 	}
 
 	if (need_start) {
 		status = svc_StartService(binding_handle, &svc_handle);
-		NT_ERR(status, 1, "StartService failed");
+		NT_ERR(status, 0, "StartService failed");
 		do {
 			smb_msleep(100);
 			status = svc_QueryServiceStatus(binding_handle, &svc_handle, &s);
-			NT_ERR(status, 1, "QueryServiceStatus failed");
+			NT_ERR(status, 0, "QueryServiceStatus failed");
 		} while (s.state == SVCCTL_START_PENDING);
 		if (s.state != SVCCTL_RUNNING) {
 			DEBUG(0, ("Service cannot start, status=0x%08X\n", s.state));
