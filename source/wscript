@@ -90,7 +90,7 @@ def configure(ctx):
             ctx.env.SAMBA_DIR = None
 
     if not ctx.env.ENABLE_SHARED and not ctx.env.SAMBA_DIR:
-        ctx.fatal('Cannot continue! Please either install Samba shared libraries and re-run waf, or download the Samba source code and re-run waf using the --samba-dir option.')
+        ctx.fatal('Cannot continue! Please either install Samba shared libraries and re-run waf, or download the Samba source code and re-run waf with the "--samba-dir" option.')
 
     ctx.setenv('win32', ctx.env)
     ctx.find_program([ a + '-' + t + '-gcc' for a in AR32 for t in TC], var='CC_WIN32')
