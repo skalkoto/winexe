@@ -24,7 +24,7 @@ Instructions for Samba static library build
 
 On Debian Jessie install dependencies.
 
-    sudo apt-get install \
+    apt-get install \
         gcc-mingw-w64 \
         comerr-dev \
         libpopt-dev \
