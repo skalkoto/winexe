@@ -22,7 +22,7 @@ kilobytes in size.
 Instructions for Samba static library build
 -------------------------------------------
 
-On Debian Jessie install dependencies.
+On Debian install dependencies.
 
     apt-get install \
         gcc-mingw-w64 \
@@ -101,15 +101,19 @@ Even Jessie does not provide all the shared libraries needed by winexe
 as public libraries, but this can be worked around using symbolic links
 as explained below.
 
-Install dependencies.
+On Debian install dependencies.
 
     apt-get install \
         python2.7 \
         gcc-mingw-w64 \
-        libtevent-dev \
-        samba-dev
+        libtevent-dev
+
+From Debian Jessie install dependencies.
+
+    apt-get install samba-dev
 
 Add symbolic links to make private libraries available to the linker.
+Yes, this is an ugly hack.
 
     cd /usr/lib/x86_64-linux-gnu/samba
     sudo ln -s libcli-ldap.so.0 libcli-ldap.so
