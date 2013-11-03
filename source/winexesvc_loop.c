@@ -374,25 +374,19 @@ static int cmd_run(connection_context *c)
 	/* Send handle to client (it will use it to connect pipes) */
 	hprintf(c->pipe, CMD_STD_IO_ERR " %08X\n", pipe_nr);
 
-	wres = ConnectNamedPipe(c->pin, NULL);
-	if (!wres) {
-		wres = (GetLastError() == ERROR_PIPE_CONNECTED);
-		hprintf(c->pipe, "error ConnectNamedPipe(pin)\n");
-		goto finishClosePerr;
-	}
+	HANDLE ph[] = { c->pin, c->pout, c->perr };
+	int i;
 
-	wres = ConnectNamedPipe(c->pout, NULL);
-	if (!wres) {
-		wres = (GetLastError() == ERROR_PIPE_CONNECTED);
-		hprintf(c->pipe, "error ConnectNamedPipe(pout)\n");
-		goto finishDisconnectPin;
-	}
-
-	wres = ConnectNamedPipe(c->perr, NULL);
-	if (!wres) {
-		wres = (GetLastError() == ERROR_PIPE_CONNECTED);
-		hprintf(c->pipe, "error ConnectNamedPipe(perr)\n");
-		goto finishDisconnectPout;
+	for (i = 0; i < 3; ++i) {
+		if (ConnectNamedPipe(ph[i], NULL))
+			continue;
+		int err = GetLastError();
+		if (err != ERROR_PIPE_CONNECTED) {
+			hprintf(c->pipe, "error ConnectNamedPipe(pin) %d\n", err);
+			while (--i >= 0)
+				DisconnectNamedPipe(ph[i]);
+			goto finishClosePerr;
+		}
 	}
 
 	SetHandleInformation(c->pin, HANDLE_FLAG_INHERIT, 1);
@@ -455,9 +449,7 @@ static int cmd_run(connection_context *c)
 	}
 
 	DisconnectNamedPipe(c->perr);
-finishDisconnectPout:
 	DisconnectNamedPipe(c->pout);
-finishDisconnectPin:
 	DisconnectNamedPipe(c->pin);
 finishClosePerr:
 	CloseHandle(c->perr);
