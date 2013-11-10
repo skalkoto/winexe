@@ -450,10 +450,18 @@ static void on_in_pipe_open(struct winexe_context *c)
 	setbuf(stdin, NULL);
 }
 
+static void write_checking_retval(int fd, const char *data, int len)
+{
+	ssize_t r = write(fd, data, len);
+	if (r < len)
+		DEBUG(0, ("ERROR: Failed trying to write %d bytes; value returned was %d\n", len, r));
+	return;
+}
+
 static void write_conv_buf(int fd, struct winexe_context *c, const char *data, int len)
 {
 	if (c->iconv_dec == (iconv_t)(-1)) {
-		write(fd, data, len);
+		write_checking_retval(fd, data, len);
 		return;
 	}
 
@@ -465,10 +473,10 @@ static void write_conv_buf(int fd, struct winexe_context *c, const char *data, i
 
 		size_t nchars = iconv(c->iconv_dec, (char **)&data, &l, &p, &left);
 
-		write(fd, buf, p - buf);
+		write_checking_retval(fd, buf, p - buf);
 		if (nchars == -1) {
 			DEBUG(9, ("Could not convert: \"%.*s\", errno=%d\n", (int)l, data, errno));
-			write(1, data, l);
+			write_checking_retval(1, data, l);
 			return;
 		}
 

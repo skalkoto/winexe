@@ -329,7 +329,7 @@ static int cmd_run(connection_context *c)
 
 	pipe_nr = (GetCurrentProcessId() << 16) + (DWORD) c->conn_number;
 
-	sprintf(buf, "\\\\.\\pipe\\" PIPE_NAME_IN, pipe_nr);
+	sprintf(buf, "\\\\.\\pipe\\" PIPE_NAME_IN, (unsigned int) pipe_nr);
 	c->pin = CreateNamedPipe(buf,
 	                         PIPE_ACCESS_DUPLEX,
 	                         PIPE_WAIT,
@@ -343,7 +343,7 @@ static int cmd_run(connection_context *c)
 		goto finishCloseToken;
 	}
 
-	sprintf(buf, "\\\\.\\pipe\\" PIPE_NAME_OUT, pipe_nr);
+	sprintf(buf, "\\\\.\\pipe\\" PIPE_NAME_OUT, (unsigned int) pipe_nr);
 	c->pout = CreateNamedPipe(buf,
 	                          PIPE_ACCESS_DUPLEX,
 	                          PIPE_WAIT,
@@ -357,7 +357,7 @@ static int cmd_run(connection_context *c)
 		goto finishClosePin;
 	}
 
-	sprintf(buf, "\\\\.\\pipe\\" PIPE_NAME_ERR, pipe_nr);
+	sprintf(buf, "\\\\.\\pipe\\" PIPE_NAME_ERR, (unsigned int) pipe_nr);
 	c->perr = CreateNamedPipe(buf,
 	                          PIPE_ACCESS_DUPLEX,
 	                          PIPE_WAIT,

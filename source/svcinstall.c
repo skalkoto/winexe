@@ -44,7 +44,10 @@ static NTSTATUS svc_pipe_connect(struct tevent_context *ev_ctx,
 	NTSTATUS status;
 	char *binding;
 
-	asprintf(&binding, "ncacn_np:%s%s", hostname, DEBUGLVL(9)?"[print]":"");
+	if (asprintf(&binding, "ncacn_np:%s%s", hostname, DEBUGLVL(9)?"[print]":"") == -1) {
+		DEBUG(0, ("ERROR: Failed trying to format a string"));
+		return NT_STATUS_UNSUCCESSFUL;
+	}
 	status = dcerpc_pipe_connect(ev_ctx, psvc_pipe, binding,
 	                             &ndr_table_svcctl, credentials, ev_ctx, ldprm_ctx);
 	free(binding);
