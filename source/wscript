@@ -14,7 +14,7 @@ def options(ctx):
     g.add_option('--samba-dir', action='store', help='build winexe against the Samba source code tree at the given location instead of building it against Samba headers and shared libraries installed in standard locations', dest='SAMBA_DIR')
     g.add_option('--enable-shared', action='store_true', default=False, help='build winexe against Samba headers and shared libraries installed in standard locations in addition to building winexe statically when the samba-dir option is given', dest='ENABLE_SHARED')
     g.add_option('--samba-inc-dirs', action='store', help='build against Samba headers in the given location', dest='SAMBA_INCS')
-    g.add_option('--samba-lib-dirs', action='store', help='build against Samba shared libraries in the given location in addition to shared libraries on the default path', dest='SAMBA_LIBS')
+    g.add_option('--samba-lib-dirs', action='store', help='build against Samba shared libraries in the given location in addition to shared libraries on the default path; default is /usr/lib/x86_64-linux-gnu/samba', dest='SAMBA_LIBS', default='/usr/lib/x86_64-linux-gnu/samba')
 
 def distclean(ctx):
     try:
@@ -75,7 +75,7 @@ def configure(ctx):
                 int main() {return 0;}
                 ''' % (h in 'smb_cli.h smb_cliraw.h smb_composite.h util/debug.h'.split(), h))
 
-            for l in 'cli-ldap dcerpc dcerpc-samba errors ndr-standard popt samba-hostconfig samba-credentials smbclient-raw talloc'.split():
+            for l in ':libcli-ldap.so.0 dcerpc :libdcerpc-samba.so.0 :liberrors.so.0 ndr-standard popt samba-hostconfig samba-credentials smbclient-raw talloc'.split():
                ctx.check(lib=l, libpath=ctx.env.SAMBA_LIBS)
         except:
             ctx.msg('Build of shared winexe', 'disabled', 'YELLOW')
