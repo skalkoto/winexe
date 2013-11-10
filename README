@@ -95,11 +95,11 @@ can also specify these as follows.
 Instructions for Samba shared library build
 -------------------------------------------
 
-The following instructions are for Debian Jessie, at the time of writing
-the only distribution that has packaged Samba 4 with shared libraries.
-Even Jessie does not provide all the shared libraries needed by winexe
-as public libraries, but this can be worked around using symbolic links
-as explained below.
+The following instructions are for Debian Wheezy with Samba packages
+from unstable (Jessie pre-release), at the time of writing the only
+distribution that has packaged Samba 4 with shared libraries.  Even
+Jessie does not provide all the shared libraries needed by winexe
+as public libraries, but this can be worked around as explained below.
 
 On Debian install dependencies.
 
@@ -110,16 +110,7 @@ On Debian install dependencies.
 
 From Debian Jessie install dependencies.
 
-    apt-get install samba-dev
-
-Add symbolic links to make private libraries available to the linker.
-Yes, this is an ugly hack.
-
-    cd /usr/lib/x86_64-linux-gnu/samba
-    sudo ln -s libcli-ldap.so.0 libcli-ldap.so
-    sudo ln -s libdcerpc-samba.so.0 libdcerpc-samba.so
-    sudo ln -s liberrors.so.0 liberrors.so
-    sudo ldconfig
+    apt-get -t jessie install samba-dev
 
 Build.
 

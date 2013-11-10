@@ -42,8 +42,8 @@ def configure(ctx):
         ctx.env.ENABLE_SHARED = True
 
     if ctx.env.ENABLE_SHARED:
-        ctx.check_cfg(package='talloc', uselib_store='TALLOC', args=['--cflags', '--libs'])
         ctx.check_cfg(package='dcerpc', uselib_store='DCERPC', args=['--cflags', '--libs'])
+        ctx.check_cfg(package='talloc', uselib_store='TALLOC', args=['--cflags', '--libs'])
         if ctx.options.SAMBA_INCS:
             ctx.env.SAMBA_INCS = ctx.options.SAMBA_INCS
         else:
@@ -75,7 +75,7 @@ def configure(ctx):
                 int main() {return 0;}
                 ''' % (h in 'smb_cli.h smb_cliraw.h smb_composite.h util/debug.h'.split(), h))
 
-            for l in 'cli-ldap dcerpc dcerpc-samba errors popt talloc ndr-standard samba-hostconfig samba-credentials smbclient-raw'.split():
+            for l in 'cli-ldap dcerpc dcerpc-samba errors ndr-standard popt samba-hostconfig samba-credentials smbclient-raw talloc'.split():
                ctx.check(lib=l, libpath=ctx.env.SAMBA_LIBS)
         except:
             ctx.msg('Build of shared winexe', 'disabled', 'YELLOW')
