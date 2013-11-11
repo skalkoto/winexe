@@ -30,7 +30,7 @@ if bld.env.ENABLE_SHARED:
         includes=bld.env.SAMBA_INCS,
         libpath=bld.env.SAMBA_LIBS,
         rpath=bld.env.SAMBA_LIBS,
-        lib=':libcli-ldap.so.0 :libdcerpc-samba.so.0 :liberrors.so.0 ndr-standard popt samba-hostconfig samba-credentials smbclient-raw',
+        lib=':libcli-ldap.so.0 :libdcerpc-samba.so.0 :liberrors.so.0 popt samba-hostconfig samba-credentials smbclient-raw',
         use='DCERPC TALLOC',
         )
 
