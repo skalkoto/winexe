@@ -80,7 +80,7 @@ def configure(ctx):
             # Three of the libraries — cli-ldap, dcerpc-samba and errors — are deemed private and are
             # not made available on the default link path. As a temporary workaround we build against
             # these libraries by giving their file names and by including their location in rpath.
-            for l in ':libcli-ldap.so.0 dcerpc :libdcerpc-samba.so.0 :liberrors.so.0 popt samba-hostconfig samba-credentials smbclient-raw talloc'.split():
+            for l in ':libcli-ldap.so.0 dcerpc :libdcerpc-samba.so.0 :liberrors.so.0 ndr-standard popt samba-hostconfig samba-credentials smbclient-raw talloc'.split():
                ctx.check(lib=l, libpath=ctx.env.SAMBA_LIBS)
         except:
             ctx.msg('Build of shared winexe', 'disabled', 'YELLOW')
