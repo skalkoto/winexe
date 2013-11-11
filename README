@@ -79,8 +79,7 @@ source tree that was just obtained. The "configure" step takes a long
 time because it builds Samba.
 
     cd source
-    ./waf configure --samba-dir=../samba
-    ./waf
+    ./waf --samba-dir=../samba configure build
 
 Run.
 
@@ -110,13 +109,12 @@ On Debian install dependencies.
 
 From Debian Jessie install dependencies.
 
-    apt-get -t jessie install samba-dev
+    apt-get -t unstable install samba-dev
 
 Build.
 
     cd source
-    ./waf configure
-    ./waf
+    ./waf configure build
 
 Run.
 
