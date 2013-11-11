@@ -26,9 +26,9 @@ if [ ! -d "$distro" ]; then
     }
     eval "case \"$distro\" in
     ${dist_deb// /|})
-	sudo debootstrap $distro $distro;;
+	sudo debootstrap --include=sudo $distro $distro;;
     ${dist_rpm// /|})
-	sudo rinse --arch amd64 --directory $distro --distribution $distro --add-pkg-list sudo;;
+	echo sudo | sudo rinse --arch amd64 --directory $distro --distribution $distro --add-pkg-list /dev/stdin;;
     *)
 	echo \"Unknown distro: $distro\"
 	exit 1;;
@@ -37,6 +37,9 @@ fi
 
 trap on_exit EXIT
 
+[ -c $distro/dev/tty ] || sudo mknod $distro/dev/tty c 5 0
+[ -c $distro/dev/null ] || sudo mknod -m 666 $distro/dev/null c 1 3
+
 mark_is postinstall || sudo chroot $distro /bin/bash -c '
     case $(lsb_release -is 2>dev/null) in
     Ubuntu)
@@ -44,12 +47,17 @@ mark_is postinstall || sudo chroot $distro /bin/bash -c '
 	apt-get update
 	;;
     esac
+    [ grep CentOS /etc/redhat-release ] && {
+	yum-config-manager --add-repo http://www.lfarkas.org/linux/packages/centos/lfarkas.repo
+	rpm -i http://dl.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-8.noarch.rpm
+    }
     echo postinstall >>/mark.log
 '
 
 case $distro in
     opensuse-*) pkg_install="zypper -n install";;
-    *) pkg_install="apt-get -y install";;
+    centos-*) pkg_install="yum -y install";;
+    *) pkg_install="apt-get --force-yes -y install";;
 esac
 
 grep -P "^$USER:" /etc/passwd | sudo tee -a $distro/etc/passwd >/dev/null
