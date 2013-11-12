@@ -51,7 +51,7 @@ mark_is postinstall || sudo chroot $distro /bin/bash -c '
 	apt-get update
 	;;
     esac
-    grep -P 'CentOS|Scientific Linux' /etc/redhat-release && {
+    grep -P "CentOS|Scientific Linux" /etc/redhat-release && {
 	yum-config-manager --add-repo http://www.lfarkas.org/linux/packages/centos/lfarkas.repo
 	sed -i "s!\\\$releasever/\\\$basearch/!\$releasever/mingw-w64/\$basearch!" /etc/yum.repos.d/lfarkas.repo
 	rpm -i http://dl.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-8.noarch.rpm
