@@ -29,7 +29,7 @@ if bld.env.ENABLE_SHARED:
         source='winexe.c svcinstall.c async.c winexesvc32_exe.c winexesvc64_exe.c',
         includes=bld.env.SAMBA_INCS,
         cflags='-D_FORTIFY_SOURCE=2',
-        linkflags=['-z,relro', '-z,now'],
+        linkflags=['-Wl,-z,relro', '-Wl,-z,now'],
         libpath=bld.env.SAMBA_LIBS,
         rpath=bld.env.SAMBA_LIBS,
         lib=bld.env.LIBS,
