@@ -1,0 +1,24 @@
+#!/usr/bin/make -f
+
+export DEB_BUILD_HARDENING=1
+export DEB_BUILD_HARDENING_RELRO=1
+export DEB_BUILD_HARDENING_FORTIFY=1
+
+DESTDIR=$(CURDIR)/debian/tmp
+SRCDIR=$(CURDIR)/source
+
+%:
+	dh $@ --sourcedirectory=$(SRCDIR)
+
+override_dh_auto_configure:
+	cd source && ./waf configure
+
+override_dh_auto_build:
+	cd source && ./waf build
+
+override_dh_auto_clean:
+	cd $(CURDIR)/source && rm -rf .lock-waf_linux2_build .waf-* build smb_static/.lock-wscript smb_static/build
+
+override_dh_auto_test override_dh_usrlocal override_dh_installinit override_dh_auto_install:
+		:
+
