@@ -78,6 +78,10 @@ static void async_write_recv(struct smbcli_request *req)
 			c->cb_error(c->cb_ctx, ASYNC_WRITE_RECV, status);
 		return;
 	}
+
+	if (c->cb_write)
+		c->cb_write(c->cb_ctx);
+
 	if (c->wq.begin) {
 		async_write(c, c->wq.begin->data, c->wq.begin->size);
 		list_dequeue(&c->wq);

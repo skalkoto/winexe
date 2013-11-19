@@ -4,6 +4,7 @@
   License: GNU General Public License version 3
 */
 
+#include <sys/epoll.h>
 #include <sys/fcntl.h>
 #include <sys/unistd.h>
 #include <sys/termios.h>
@@ -243,6 +244,7 @@ struct winexe_context {
 };
 
 static void on_in_pipe_open(struct winexe_context *c);
+static void on_in_pipe_write(struct winexe_context *c);
 
 static void on_out_pipe_read(struct winexe_context *c, const char *data, int len);
 static void on_err_pipe_read(struct winexe_context *c, const char *data, int len);
@@ -299,7 +301,8 @@ static void on_ctrl_pipe_open(struct winexe_context *c)
 
 static void on_ctrl_pipe_close(struct winexe_context *c)
 {
-	talloc_free(c->ev_stdin);
+	if (c->ev_stdin)
+		talloc_free(c->ev_stdin);
 	talloc_free(c->ev_timeout);
 }
 
@@ -317,7 +320,8 @@ static void on_ctrl_pipe_error(struct winexe_context *c, int func, NTSTATUS stat
 		c->return_code = RET_CODE_CTRL_PIPE_ERROR;
 	}
 
-	talloc_free(c->ev_stdin);
+	if (c->ev_stdin)
+		talloc_free(c->ev_stdin);
 	talloc_free(c->ev_timeout);
 }
 
@@ -342,6 +346,7 @@ static void on_ctrl_pipe_read(struct winexe_context *c, const char *data, int le
 		c->ac_in->tree = c->tree;
 		c->ac_in->cb_ctx = c;
 		c->ac_in->cb_open = (async_cb_open) on_in_pipe_open;
+		c->ac_in->cb_write = (async_cb_write) on_in_pipe_write;
 		c->ac_in->cb_error = (async_cb_error) on_in_pipe_error;
 		fn = talloc_asprintf(c->ac_in, "\\" PIPE_NAME_IN, npipe);
 		async_open(c->ac_in, fn, OPENX_MODE_ACCESS_RDWR);
@@ -436,11 +441,25 @@ static void on_stdin_read_event(struct tevent_context *ev,
 	}
 }
 
+static bool is_fd_pollable(int fd)
+{
+	struct epoll_event ev = {};
+
+	/* dirty check, probably not portable */
+	epoll_ctl(fd, EPOLL_CTL_ADD, fd, &ev);
+
+	return errno != EPERM;
+}
+
 static void on_in_pipe_open(struct winexe_context *c)
 {
-	c->ev_stdin = tevent_add_fd(c->tree->session->transport->ev,
+	if (is_fd_pollable(0))
+	    c->ev_stdin = tevent_add_fd(c->tree->session->transport->ev,
 	                            c->tree, 0, TEVENT_FD_READ,
 	                            (tevent_fd_handler_t) on_stdin_read_event, c);
+	else
+	    on_stdin_read_event(NULL, NULL, 0, c);
+
 	struct termios termios_tmp;
 	tcgetattr(0, &termios_orig);
 	termios_orig_is_valid = 1;
@@ -448,6 +467,14 @@ static void on_in_pipe_open(struct winexe_context *c)
 	termios_tmp.c_lflag &= ~ICANON;
 	tcsetattr(0, TCSANOW, &termios_tmp);
 	setbuf(stdin, NULL);
+}
+
+static void on_in_pipe_write(struct winexe_context *c)
+{
+	if (c->ev_stdin)
+		return;
+
+	on_stdin_read_event(NULL, NULL, 0, c);
 }
 
 static void write_checking_retval(int fd, const char *data, int len)
