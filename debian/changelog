@@ -1,3 +1,9 @@
+winexe (1.1~201311181815-2~saucy) saucy; urgency=low
+
+  * Add missing python-samba dependency
+
+ -- Nikos Skalkotos <skalkoto@grnet.gr>  Tue, 19 Nov 2013 16:31:51 +0200
+
 winexe (1.1~201311181815-1~saucy) saucy; urgency=low
 
   * New upstream version
