@@ -481,7 +481,8 @@ static void write_checking_retval(int fd, const char *data, int len)
 {
 	ssize_t r = write(fd, data, len);
 	if (r < len)
-		DEBUG(0, ("ERROR: Failed trying to write %d bytes; value returned was %d\n", len, r));
+		DEBUG(0, ("ERROR: Failed trying to write %d bytes; value returned was %d\n",
+		      len, (int)r));
 	return;
 }
 
