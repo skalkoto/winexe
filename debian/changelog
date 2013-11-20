@@ -1,3 +1,9 @@
+winexe (1.1~201311181815-3~raring) raring; urgency=low
+
+  * Add manpage for winexe
+
+ -- Nikos Skalkotos <skalkoto@grnet.gr>  Wed, 20 Nov 2013 12:29:23 +0200
+
 winexe (1.1~201311181815-2~raring) raring; urgency=low
 
   * Add missing python-samba dependency
