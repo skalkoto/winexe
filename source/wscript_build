@@ -4,17 +4,20 @@ bld.program(target='winexesvc32.exe',
     source='winexesvc_launch.c winexesvc_loop.c',
     linkflags='-s',
     lib='userenv',
-    env=bld.all_envs['win32'])
+    env=bld.all_envs['win32'],
+    install_path=None)
 
 bld.program(target='winexesvc64.exe',
     source='winexesvc_launch.c winexesvc_loop.c',
     linkflags='-s',
     lib='userenv',
-    env=bld.all_envs['win64'])
+    env=bld.all_envs['win64'],
+    install_path=None)
 
 bld.program(target='bin2c',
     source='bin2c.c',
-    cflags='')
+    cflags='',
+    install_path=None)
 
 bld(name="bin2c", rule='${SRC[0].abspath()} winexesvc32_exe ${SRC[1]} > ${TGT} 2>/dev/null',
     target='winexesvc32_exe.c',
