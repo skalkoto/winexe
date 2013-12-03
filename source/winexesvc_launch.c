@@ -20,7 +20,7 @@ static void SvcDebugOut(const char *a, int b)
 	fclose(f);
 }
 #else
-#define SvcDebugOut(a,b) 0
+#define SvcDebugOut(a,b)
 #endif
 
 extern DWORD WINAPI winexesvc_loop(LPVOID lpParameter);
