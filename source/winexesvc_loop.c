@@ -18,16 +18,16 @@
 #define BUFSIZE 256
 
 #if 0
-static void SvcDebugOut(const char *a, int b)
-{
-	FILE *f = fopen("C:\\" SERVICE_NAME ".log", "at");
-	if (f) {
-		fprintf(f, a, b);
-		fclose(f);
-	}
-}
+#define dbg(arg...) \
+({\
+	FILE *f = fopen("C:\\" SERVICE_NAME ".log", "at");\
+	if (f) {\
+		fprintf(f, arg);\
+		fclose(f);\
+	}\
+})
 #else
-#define SvcDebugOut(a,b) 0
+#define dbg(arg...)
 #endif
 
 static SECURITY_ATTRIBUTES sa;
@@ -40,7 +40,7 @@ static int CreatePipesSA()
 	PACL pACL = NULL;
 	PSECURITY_DESCRIPTOR pSD = NULL;
 	EXPLICIT_ACCESS ea;
-	SID_IDENTIFIER_AUTHORITY SIDAuthNT = SECURITY_NT_AUTHORITY;
+ 	SID_IDENTIFIER_AUTHORITY SIDAuthNT = {SECURITY_NT_AUTHORITY};
 
 	/* Create a SID for the BUILTIN\Administrators group. */
 	if (
@@ -51,7 +51,7 @@ static int CreatePipesSA()
 			0, 0, 0, 0, 0, 0, &pAdminSID
 		)
 	) {
-		SvcDebugOut("AllocateAndInitializeSid Error %u\n", GetLastError());
+		dbg("AllocateAndInitializeSid Error %lu\n", GetLastError());
 		return 0;
 	}
 	/* Initialize an EXPLICIT_ACCESS structure for an ACE.
@@ -67,19 +67,19 @@ static int CreatePipesSA()
 	/* Create a new ACL that contains the new ACEs */
 	dwRes = SetEntriesInAcl(1, &ea, NULL, &pACL);
 	if (ERROR_SUCCESS != dwRes) {
-		SvcDebugOut("SetEntriesInAcl Error %u\n", GetLastError());
+		dbg("SetEntriesInAcl Error %lu\n", GetLastError());
 		return 0;
 	}
 	/* Initialize a security descriptor */
 	pSD = (PSECURITY_DESCRIPTOR) LocalAlloc(LPTR, SECURITY_DESCRIPTOR_MIN_LENGTH);
 	if (NULL == pSD) {
-		SvcDebugOut("LocalAlloc Error %u\n", GetLastError());
+		dbg("LocalAlloc Error %lu\n", GetLastError());
 		return 0;
 	}
 
 	if (!InitializeSecurityDescriptor(pSD, SECURITY_DESCRIPTOR_REVISION))
 	{
-		SvcDebugOut("InitializeSecurityDescriptor Error %u\n", GetLastError());
+		dbg("InitializeSecurityDescriptor Error %lu\n", GetLastError());
 		return 0;
 	}
 	/* Add the ACL to the security descriptor */
@@ -89,7 +89,7 @@ static int CreatePipesSA()
 			pACL, FALSE  /* not a default DACL */
 		) 
 	) {
-		SvcDebugOut("SetSecurityDescriptorDacl Error %u\n", GetLastError());
+		dbg("SetSecurityDescriptorDacl Error %lu\n", GetLastError());
 		return 0;
 	}
 	/* Initialize a security attributes structure */
@@ -314,7 +314,6 @@ static int cmd_run(connection_context *c)
 {
 	char buf[256];
 	int res = 0;
-	int wres;
 	char *cmdline;
 	DWORD pipe_nr;
 
@@ -396,11 +395,6 @@ static int cmd_run(connection_context *c)
 	if (c->profile)
 		load_user_profile(c);
 
-	SECURITY_ATTRIBUTES sattr;
-	sattr.nLength = sizeof(SECURITY_ATTRIBUTES);
-	sattr.bInheritHandle = TRUE;
-	sattr.lpSecurityDescriptor = NULL;
-
 	PROCESS_INFORMATION pi;
 	ZeroMemory(&pi, sizeof(PROCESS_INFORMATION));
 
@@ -430,11 +424,11 @@ static int cmd_run(connection_context *c)
 		char str[1];
 		
 		if (!ResetEvent(c->pipe->o.hEvent))
-			SvcDebugOut("ResetEvent error - %d\n", GetLastError());
+			dbg("ResetEvent error - %lu\n", GetLastError());
 		if (!ReadFile(c->pipe->h, str, 1, NULL, &c->pipe->o) && GetLastError() != ERROR_IO_PENDING)
-			SvcDebugOut("ReadFile(control_pipe) error - %d\n", GetLastError());
+			dbg("ReadFile(control_pipe) error - %lu\n", GetLastError());
 		ec = WaitForMultipleObjects(2, hlist, FALSE, INFINITE);
-		SvcDebugOut("WaitForMultipleObjects=%d\n", ec - WAIT_OBJECT_0);
+		dbg("WaitForMultipleObjects=%lu\n", ec - WAIT_OBJECT_0);
 		if (ec != WAIT_OBJECT_0)
 			GetExitCodeProcess(pi.hProcess, &ec);
 		else
@@ -498,10 +492,10 @@ static VOID handle_connection(connection_data *data)
 	while (1) {
 		res = hgets(cmd, MAX_COMMAND_LENGTH, c->pipe);
 		if (res <= 0) {
-			SvcDebugOut("Error reading from pipe(%08X)\n", (int) c->pipe->h);
+			dbg("Error reading from pipe(%p)\n", c->pipe->h);
 			goto finish;
 		}
-		SvcDebugOut("Retrieved line: \"%s\"\n", (int)cmd);
+		dbg("Retrieved line: \"%s\"\n", cmd);
 		CMD_ITEM *ci;
 		for (ci = cmd_table; ci->name; ++ci) {
 			if (strstr(cmd, ci->name) != cmd)
@@ -532,14 +526,14 @@ DWORD WINAPI winexesvc_loop(LPVOID lpParameter)
 {
 	BOOL res;
 
-	SvcDebugOut("server_loop: alive\n", 0);
+	dbg("server_loop: alive\n");
 	if (!CreatePipesSA()) {
-		SvcDebugOut("CreatePipesSA failed (%08X)\n", GetLastError());
+		dbg("CreatePipesSA failed (%08lX)\n", GetLastError());
 		return -1;
 	}
-	SvcDebugOut("server_loop: CreatePipesSA done\n", 0);
+	dbg("server_loop: CreatePipesSA done\n");
 	for (;;) {
-		SvcDebugOut("server_loop: Create Pipe\n", 0);
+		dbg("server_loop: Create Pipe\n");
 		OV_HANDLE *pipe;
 		pipe = (OV_HANDLE *)malloc(sizeof(OV_HANDLE));
 		ZeroMemory(&pipe->o, sizeof(OVERLAPPED));
@@ -553,30 +547,30 @@ DWORD WINAPI winexesvc_loop(LPVOID lpParameter)
 		                          NMPWAIT_USE_DEFAULT_WAIT,
 		                          &sa);
 		if (pipe->h == INVALID_HANDLE_VALUE) {
-			SvcDebugOut("CreatePipe failed(%08X)\n",
+			dbg("CreatePipe failed(%08lX)\n",
 			            GetLastError());
 			CloseHandle(pipe->o.hEvent);
 			free(pipe);
 			return 0;
 		}
 
-		SvcDebugOut("server_loop: Connect Pipe\n", 0);
+		dbg("server_loop: Connect Pipe\n");
 		if (ConnectNamedPipe(pipe->h, &pipe->o)) {
-			SvcDebugOut("server_loop: Connect Pipe err %08X\n", GetLastError());
+			dbg("server_loop: Connect Pipe err %08lX\n", GetLastError());
 			res = FALSE;
 		} else {
 			switch (GetLastError()) {
 			  case ERROR_IO_PENDING:
-				SvcDebugOut("server_loop: Connect Pipe(0) pending\n", 0);
+				dbg("server_loop: Connect Pipe(0) pending\n");
 				DWORD t;
 				res = GetOverlappedResult(pipe->h, &pipe->o, &t, TRUE);
 				break;
 			  case ERROR_PIPE_CONNECTED:
-				SvcDebugOut("server_loop: Connect Pipe(0) connected\n", 0);
+				dbg("server_loop: Connect Pipe(0) connected\n");
 				res = TRUE;
 				break;
 			  default:
-				SvcDebugOut("server_loop: Connect Pipe(0) err %08X\n", GetLastError());
+				dbg("server_loop: Connect Pipe(0) err %08lX\n", GetLastError());
 				res = FALSE;
 			}
 		}
@@ -585,7 +579,7 @@ DWORD WINAPI winexesvc_loop(LPVOID lpParameter)
 			connection_data *cd = malloc(sizeof(connection_data));
 			cd->pipe = pipe;
 			cd->conn_number = ++conn_number;
-			SvcDebugOut("server_loop: CreateThread\n", 0);
+			dbg("server_loop: CreateThread\n");
 			HANDLE th = CreateThread(NULL,	/* no security attribute */
 			                         0,	/* default stack size */
 			                         (LPTHREAD_START_ROUTINE)
@@ -594,21 +588,21 @@ DWORD WINAPI winexesvc_loop(LPVOID lpParameter)
 			                         0,	/* not suspended */
 			                         NULL);	/* returns thread ID */
 			if (!th) {
-				SvcDebugOut("Cannot create thread\n", 0);
+				dbg("Cannot create thread\n");
 				CloseHandle(pipe->h);
 				CloseHandle(pipe->o.hEvent);
 				free(pipe);
 			} else {
 				CloseHandle(th);
-				SvcDebugOut("server_loop: Thread created\n", 0);
+				dbg("server_loop: Thread created\n");
 			}
 		} else {
-			SvcDebugOut("server_loop: Pipe not connected\n", 0);
+			dbg("server_loop: Pipe not connected\n");
 			CloseHandle(pipe->h);
 			CloseHandle(pipe->o.hEvent);
 			free(pipe);
 		}
 	}
-	SvcDebugOut("server_loop: STH wrong\n", 0);
+	dbg("server_loop: STH wrong\n");
 	return 0;
 }

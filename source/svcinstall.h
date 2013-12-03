@@ -34,3 +34,8 @@ const char *lpcfg_socket_options(struct loadparm_context *);
 struct gensec_settings *lpcfg_gensec_settings(TALLOC_CTX *, struct loadparm_context *);
 struct loadparm_context *loadparm_init_global(bool load_default);
 struct resolve_context *lpcfg_resolve_context(struct loadparm_context *lp_ctx);
+void lpcfg_smbcli_options(struct loadparm_context *, struct smbcli_options *);
+bool lpcfg_set_cmdline(struct loadparm_context *, const char *, const char *);
+bool lpcfg_set_option(struct loadparm_context *, const char *);
+void lpcfg_smbcli_session_options(struct loadparm_context *,
+    struct smbcli_session_options *options);

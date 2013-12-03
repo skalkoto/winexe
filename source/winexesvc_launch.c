@@ -13,14 +13,16 @@
 #include "winexesvc.h"
 
 #if 0
-static void SvcDebugOut(const char *a, int b)
-{
-	FILE *f = fopen("C:\\" SERVICE_NAME ".log", "at");
-	fprintf(f, a, b);
-	fclose(f);
-}
+#define dbg(arg...) \
+({\
+	FILE *f = fopen("C:\\" SERVICE_NAME ".log", "at");\
+	if (f) {\
+		fprintf(f, arg);\
+		fclose(f);\
+	}\
+})
 #else
-#define SvcDebugOut(a,b)
+#define dbg(arg...)
 #endif
 
 extern DWORD WINAPI winexesvc_loop(LPVOID lpParameter);
@@ -30,48 +32,41 @@ static SERVICE_STATUS_HANDLE winexesvcStatusHandle;
 
 static VOID WINAPI winexesvcCtrlHandler(DWORD Opcode)
 {
-	DWORD status;
-
 	switch (Opcode) {
 	  case SERVICE_CONTROL_PAUSE:
-		SvcDebugOut(SERVICE_NAME ": winexesvcCtrlHandler: pause\n", 0);
+		dbg(SERVICE_NAME ": winexesvcCtrlHandler: pause\n", 0);
 		winexesvcStatus.dwCurrentState = SERVICE_PAUSED;
 		break;
 
 	  case SERVICE_CONTROL_CONTINUE:
-		SvcDebugOut(SERVICE_NAME ": winexesvcCtrlHandler: continue\n", 0);
+		dbg(SERVICE_NAME ": winexesvcCtrlHandler: continue\n", 0);
 		winexesvcStatus.dwCurrentState = SERVICE_RUNNING;
 		break;
 
 	  case SERVICE_CONTROL_STOP:
-		SvcDebugOut(SERVICE_NAME ": winexesvcCtrlHandler: stop\n", 0);
+		dbg(SERVICE_NAME ": winexesvcCtrlHandler: stop\n", 0);
 		winexesvcStatus.dwWin32ExitCode = 0;
 		winexesvcStatus.dwCurrentState = SERVICE_STOPPED;
 		winexesvcStatus.dwCheckPoint = 0;
 		winexesvcStatus.dwWaitHint = 0;
 
-		if (!SetServiceStatus (winexesvcStatusHandle, &winexesvcStatus)) {
-			status = GetLastError();
-			SvcDebugOut(SERVICE_NAME
-			            ": SetServiceStatus error %ld\n",
-			            status);
-		}
+		if (!SetServiceStatus (winexesvcStatusHandle, &winexesvcStatus))
+			dbg(SERVICE_NAME ": SetServiceStatus error %ld\n", GetLastError());
 
-		SvcDebugOut(SERVICE_NAME ": Leaving winexesvc\n", 0);
+		dbg(SERVICE_NAME ": Leaving winexesvc\n", 0);
 		return;
 
 	  case SERVICE_CONTROL_INTERROGATE:
-		SvcDebugOut(SERVICE_NAME ": winexesvcCtrlHandler: interrogate\n", 0);
+		dbg(SERVICE_NAME ": winexesvcCtrlHandler: interrogate\n", 0);
 		break;
 
 	  default:
-		SvcDebugOut(SERVICE_NAME ": Unrecognized opcode %ld\n", Opcode);
+		dbg(SERVICE_NAME ": Unrecognized opcode %ld\n", Opcode);
 	}
 
-	if (!SetServiceStatus(winexesvcStatusHandle, &winexesvcStatus)) {
-		status = GetLastError();
-		SvcDebugOut(SERVICE_NAME ": SetServiceStatus error 0x%08X\n", status);
-	}
+	if (!SetServiceStatus(winexesvcStatusHandle, &winexesvcStatus))
+		dbg(SERVICE_NAME ": SetServiceStatus error 0x%08X\n", GetLastError());
+
 	return;
 }
 
@@ -98,12 +93,12 @@ static void WINAPI winexesvcStart(DWORD argc, LPTSTR * argv)
 	winexesvcStatus.dwCheckPoint = 0;
 	winexesvcStatus.dwWaitHint = 0;
 
-	SvcDebugOut(SERVICE_NAME ": RegisterServiceCtrlHandler\n", 0);
+	dbg(SERVICE_NAME ": RegisterServiceCtrlHandler\n", 0);
 
 	winexesvcStatusHandle = RegisterServiceCtrlHandler(SERVICE_NAME, winexesvcCtrlHandler);
 
 	if (winexesvcStatusHandle == (SERVICE_STATUS_HANDLE) 0) {
-		SvcDebugOut(SERVICE_NAME
+		dbg(SERVICE_NAME
 		            ": RegisterServiceCtrlHandler failed %d\n",
 		            GetLastError());
 		return;
@@ -127,10 +122,10 @@ static void WINAPI winexesvcStart(DWORD argc, LPTSTR * argv)
 
 	if (!SetServiceStatus(winexesvcStatusHandle, &winexesvcStatus)) {
 		status = GetLastError();
-		SvcDebugOut(SERVICE_NAME ": SetServiceStatus error %ld\n", status);
+		dbg(SERVICE_NAME ": SetServiceStatus error %ld\n", status);
 	}
 
-	SvcDebugOut(SERVICE_NAME ": Returning the Main Thread \n", 0);
+	dbg(SERVICE_NAME ": Returning the Main Thread \n", 0);
 
 	return;
 }
@@ -142,9 +137,9 @@ int main(int argc, char *argv[])
 		{NULL, NULL}
 	};
 
-	SvcDebugOut(SERVICE_NAME ": StartServiceCtrlDispatcher %d\n", GetLastError());
+	dbg(SERVICE_NAME ": StartServiceCtrlDispatcher %d\n", GetLastError());
 	if (!StartServiceCtrlDispatcher(DispatchTable)) {
-		SvcDebugOut(SERVICE_NAME
+		dbg(SERVICE_NAME
 		": StartServiceCtrlDispatcher (%d)\n",
 		GetLastError());
 	}

@@ -114,9 +114,8 @@ static void async_open_recv(struct smbcli_request *req)
 static void async_close_recv(struct smbcli_request *req)
 {
 	struct async_context *c = req->async.private_data;
-	NTSTATUS status;
 
-	status = smbcli_request_simple_recv(req);
+	smbcli_request_simple_recv(req);
 	talloc_free(c->io_close);
 	c->io_close = 0;
 	if (c->io_open) {
