@@ -301,9 +301,8 @@ static void on_ctrl_pipe_open(struct winexe_context *c)
 
 static void on_ctrl_pipe_close(struct winexe_context *c)
 {
-	if (c->ev_stdin)
-		talloc_free(c->ev_stdin);
-	talloc_free(c->ev_timeout);
+	TALLOC_FREE(c->ev_stdin);
+	TALLOC_FREE(c->ev_timeout);
 }
 
 static void on_ctrl_pipe_error(struct winexe_context *c, int func, NTSTATUS status)
@@ -320,9 +319,8 @@ static void on_ctrl_pipe_error(struct winexe_context *c, int func, NTSTATUS stat
 		c->return_code = RET_CODE_CTRL_PIPE_ERROR;
 	}
 
-	if (c->ev_stdin)
-		talloc_free(c->ev_stdin);
-	talloc_free(c->ev_timeout);
+	TALLOC_FREE(c->ev_stdin);
+	TALLOC_FREE(c->ev_timeout);
 }
 
 const char *codepage_to_string(int cp)
