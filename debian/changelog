@@ -1,7 +1,6 @@
-winexe (1.1~pre1~2912528a63b4a775dbbc64e393fcecb41682b6b8-1~wheezy) wheezy; urgency=low
+winexe (1.1~201405081119-1~trusty) trusty; urgency=low
 
   * New upstream version
 
- -- Nikos Skalkotos <skalkoto@grnet.gr>  Tue, 20 Aug 2013 17:07:09 +0300
-
+ -- Nikos Skalkotos <skalkoto@grnet.gr>  Wed, 07 May 2014 19:28:59 +0300
 
