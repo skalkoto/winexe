@@ -1,3 +1,9 @@
+winexe (1.1~201405081119-4~trusty) trusty; urgency=low
+
+  * Recompile the package against newer Samba-libs
+
+ -- Nikos Skalkotos <skalkoto@grnet.gr>  Wed, 06 Aug 2014 18:12:02 +0300
+
 winexe (1.1~201405081119-3~trusty) trusty; urgency=low
 
   * Recompile the package against newer Samba-libs
