@@ -1,3 +1,9 @@
+winexe (1.1~pre1~2912528a63b4a775dbbc64e393fcecb41682b6b8-2~jessie) jessie; urgency=low
+
+  * Recompile for jessie
+
+ -- Nikos Skalkotos <skalkoto@grnet.gr>  Mon, 01 Feb 2016 10:53:13 +0200
+
 winexe (1.1~pre1~2912528a63b4a775dbbc64e393fcecb41682b6b8-1~wheezy) wheezy; urgency=low
 
   * New upstream version
