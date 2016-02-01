@@ -24,6 +24,9 @@ Note that Windows Vista does not support interactive mode.
 \fB\-k\fR, \fB\-\-kerberos=\fR\fByes\fR|\fBno\fR
 Use Kerberos, \fByes\fR or \fBno\fR?
 .TP
+\fB\-N\fR, \fB\-\-no\-pass
+Do not prompt for a password.
+.TP
 \fB\-\-ostype=\fR\fB0\fR|\fB1\fR|\fB2\fR
 Install 32-bit (\fB0\fR); 64-bit (\fB1\fR); or automatically chosen (\fB2\fR) version of the winexe service.
 .TP
@@ -31,9 +34,9 @@ Install 32-bit (\fB0\fR); 64-bit (\fB1\fR); or automatically chosen (\fB2\fR) ve
 Uninstall the winexe service from the remote machine and install it again before using it to execute the command.
 .TP
 \fB\-\-runas=\fR[\fIDOMAIN\fR/]\fIUSERNAME\fR[%\fIPASSWORD\fR]
-Run the desired command under account \fIUSERNAME\fR
+Run the desired command under Windows account \fIUSERNAME\fR
 with optional \fIDOMAIN\fR and \fIPASSWORD\fR.
-Beware: the password it sent in cleartext!
+Beware: this password is sent over the network in cleartext!
 .TP
 \fB\-\-runas\-file=\fR\fIFILE\fR
 Run the desired command under the account defined in \fIFILE\fR.

@@ -1,14 +1,15 @@
 /*
-   Copyright (C) Andrzej Hajda 2009
-   Contact: andrzej.hajda@wp.pl
-   License: GNU General Public License version 3
+  Copyright (C) Andrzej Hajda 2009-2013
+  Contact: andrzej.hajda@wp.pl
+  License: GNU General Public License version 3
 */
 
 enum { ASYNC_OPEN, ASYNC_OPEN_RECV, ASYNC_READ, ASYNC_READ_RECV,
-            ASYNC_WRITE, ASYNC_WRITE_RECV, ASYNC_CLOSE, ASYNC_CLOSE_RECV };
+       ASYNC_WRITE, ASYNC_WRITE_RECV, ASYNC_CLOSE, ASYNC_CLOSE_RECV };
 
 typedef void (*async_cb_open) (void *ctx);
 typedef void (*async_cb_read) (void *ctx, const char *data, int len);
+typedef void (*async_cb_write) (void *ctx);
 typedef void (*async_cb_close) (void *ctx);
 typedef void (*async_cb_error) (void *ctx, int func, NTSTATUS status);
 
@@ -29,6 +30,7 @@ struct async_context {
 	void *cb_ctx;
 	async_cb_open cb_open;
 	async_cb_read cb_read;
+	async_cb_write cb_write;
 	async_cb_close cb_close;
 	async_cb_error cb_error;
 /* Private - internal usage, initialize to zeros */

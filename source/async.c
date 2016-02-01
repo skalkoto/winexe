@@ -1,7 +1,7 @@
 /*
-   Copyright (C) Andrzej Hajda 2009
-   Contact: andrzej.hajda@wp.pl
-   License: GNU General Public License version 3
+  Copyright (C) Andrzej Hajda 2009-2013
+  Contact: andrzej.hajda@wp.pl
+  License: GNU General Public License version 3
 */
 
 #include <talloc.h>
@@ -17,14 +17,11 @@
 
 #include "async.h"
 
-#define USE_OPENX_CALL
-
 static int async_read(struct async_context *c);
 
 static void list_enqueue(struct data_list *l, const void *data, int size)
 {
-	struct list_item *li =
-	    talloc_size(0, sizeof(struct list_item) + size);
+	struct list_item *li = talloc_size(0, sizeof(struct list_item) + size);
 	memcpy(li->data, data, size);
 	li->size = size;
 	li->next = 0;
@@ -54,17 +51,14 @@ static void async_read_recv(struct smbcli_request *req)
 	status = smb_raw_read_recv(req, c->io_read);
 	c->rreq = NULL;
 	if (!NT_STATUS_IS_OK(status)) {
-		DEBUG(1,
-		      ("ERROR: smb_raw_read_recv - %s\n",
-		       nt_errstr(status)));
+		DEBUG(1, ("ERROR: smb_raw_read_recv - %s\n", nt_errstr(status)));
 		if (c->cb_error)
 			c->cb_error(c->cb_ctx, ASYNC_READ_RECV, status);
 		return;
 	}
 
 	if (c->cb_read)
-		c->cb_read(c->cb_ctx, c->buffer,
-			   c->io_read->readx.out.nread);
+		c->cb_read(c->cb_ctx, c->buffer, c->io_read->readx.out.nread);
 
 	async_read(c);
 }
@@ -77,15 +71,17 @@ static void async_write_recv(struct smbcli_request *req)
 	status = smb_raw_write_recv(req, c->io_write);
 	c->wreq = NULL;
 	if (!NT_STATUS_IS_OK(status)) {
-		DEBUG(1,
-		      ("ERROR: smb_raw_write_recv - %s\n",
-		       nt_errstr(status)));
+		DEBUG(1, ("ERROR: smb_raw_write_recv - %s\n", nt_errstr(status)));
 		talloc_free(c->io_write);
 		c->io_write = 0;
 		if (c->cb_error)
 			c->cb_error(c->cb_ctx, ASYNC_WRITE_RECV, status);
 		return;
 	}
+
+	if (c->cb_write)
+		c->cb_write(c->cb_ctx);
+
 	if (c->wq.begin) {
 		async_write(c, c->wq.begin->data, c->wq.begin->size);
 		list_dequeue(&c->wq);
@@ -101,17 +97,11 @@ static void async_open_recv(struct smbcli_request *req)
 	status = smb_raw_open_recv(req, c, c->io_open);
 	c->rreq = NULL;
 	if (NT_STATUS_IS_OK(status))
-#ifdef USE_OPENX_CALL
-		c->fd = c->io_open->openx.out.file.fnum;
-#else
 		c->fd = c->io_open->ntcreatex.out.file.fnum;
-#endif
 	talloc_free(c->io_open);
 	c->io_open = 0;
 	if (!NT_STATUS_IS_OK(status)) {
-		DEBUG(1,
-		      ("ERROR: smb_raw_open_recv - %s\n",
-		       nt_errstr(status)));
+		DEBUG(1, ("ERROR: smb_raw_open_recv - %s\n", nt_errstr(status)));
 		if (c->cb_error)
 			c->cb_error(c->cb_ctx, ASYNC_OPEN_RECV, status);
 		return;
@@ -124,9 +114,8 @@ static void async_open_recv(struct smbcli_request *req)
 static void async_close_recv(struct smbcli_request *req)
 {
 	struct async_context *c = req->async.private_data;
-	NTSTATUS status;
 
-	status = smbcli_request_simple_recv(req);
+	smbcli_request_simple_recv(req);
 	talloc_free(c->io_close);
 	c->io_close = 0;
 	if (c->io_open) {
@@ -161,8 +150,7 @@ static int async_read(struct async_context *c)
 	c->rreq = smb_raw_read_send(c->tree, c->io_read);
 	if (!c->rreq) {
 		if (c->cb_error)
-			c->cb_error(c->cb_ctx, ASYNC_READ,
-				    NT_STATUS_NO_MEMORY);
+			c->cb_error(c->cb_ctx, ASYNC_READ, NT_STATUS_NO_MEMORY);
 		return 0;
 	}
 	c->rreq->transport->options.request_timeout = 0;
@@ -177,35 +165,28 @@ int async_open(struct async_context *c, const char *fn, int open_mode)
 	c->io_open = talloc_zero(c, union smb_open);
 	if (!c->io_open)
 		goto failed;
-#ifdef USE_OPENX_CALL
-	c->io_open->openx.level = RAW_OPEN_OPENX;
-	c->io_open->openx.in.flags = 0;
-	c->io_open->openx.in.open_mode = open_mode;
-	c->io_open->openx.in.search_attrs =
-	    FILE_ATTRIBUTE_SYSTEM | FILE_ATTRIBUTE_HIDDEN;
-	c->io_open->openx.in.file_attrs = 0;
-	c->io_open->openx.in.write_time = 0;
-	c->io_open->openx.in.open_func = 0;
-	c->io_open->openx.in.size = 0;
-	c->io_open->openx.in.timeout = 0;
-	c->io_open->openx.in.fname = fn;
-#else
 	c->io_open->ntcreatex.level = RAW_OPEN_NTCREATEX;
-        c->io_open->ntcreatex.in.flags = NTCREATEX_FLAGS_EXTENDED;
-        c->io_open->ntcreatex.in.access_mask = open_mode;
-        c->io_open->ntcreatex.in.open_disposition = NTCREATEX_DISP_OPEN;
-        c->io_open->ntcreatex.in.impersonation    = impersonation;
-        c->io_open->ntcreatex.in.create_options = NTCREATEX_OPTIONS_NON_DIRECTORY_FILE | NTCREATEX_OPTIONS_WRITE_THROUGH;
-        c->io_open->ntcreatex.in.security_flags = NTCREATEX_SECURITY_DYNAMIC | NTCREATEX_SECURITY_ALL;
-        c->io_open->ntcreatex.in.fname = fn;
-#endif
+	c->io_open->ntcreatex.in.flags = 0;
+	c->io_open->ntcreatex.in.root_fid.fnum = 0;
+	c->io_open->ntcreatex.in.access_mask =
+		SEC_STD_READ_CONTROL |
+		SEC_FILE_WRITE_ATTRIBUTE |
+		SEC_FILE_WRITE_EA |
+		SEC_FILE_READ_DATA |
+		SEC_FILE_WRITE_DATA;
+	c->io_open->ntcreatex.in.open_disposition = NTCREATEX_DISP_OPEN;
+	c->io_open->ntcreatex.in.impersonation    = NTCREATEX_IMPERSONATION_IMPERSONATION;
+	c->io_open->ntcreatex.in.create_options = NTCREATEX_OPTIONS_NON_DIRECTORY_FILE | NTCREATEX_OPTIONS_WRITE_THROUGH;
+	c->io_open->ntcreatex.in.security_flags = 0;
+	c->io_open->ntcreatex.in.fname = fn;
 	c->rreq = smb_raw_open_send(c->tree, c->io_open);
 	if (!c->rreq)
 		goto failed;
 	c->rreq->async.fn = async_open_recv;
 	c->rreq->async.private_data = c;
 	return 1;
-      failed:
+
+  failed:
 	DEBUG(1, ("ERROR: async_open\n"));
 	talloc_free(c);
 	return 0;
@@ -228,14 +209,13 @@ int async_write(struct async_context *c, const void *buf, int len)
 	}
 	c->io_write->write.in.count = len;
 	c->io_write->write.in.data = buf;
-	struct smbcli_request *req =
-	    smb_raw_write_send(c->tree, c->io_write);
+	struct smbcli_request *req = smb_raw_write_send(c->tree, c->io_write);
 	if (!req)
 		goto failed;
 	req->async.fn = async_write_recv;
 	req->async.private_data = c;
 	return 1;
-      failed:
+  failed:
 	DEBUG(1, ("ERROR: async_write\n"));
 	talloc_free(c->io_write);
 	c->io_write = 0;
@@ -255,14 +235,13 @@ int async_close(struct async_context *c)
 	c->io_close->close.level = RAW_CLOSE_CLOSE;
 	c->io_close->close.in.file.fnum = c->fd;
 	c->io_close->close.in.write_time = 0;
-	struct smbcli_request *req =
-	    smb_raw_close_send(c->tree, c->io_close);
+	struct smbcli_request *req = smb_raw_close_send(c->tree, c->io_close);
 	if (!req)
 		goto failed;
 	req->async.fn = async_close_recv;
 	req->async.private_data = c;
 	return 1;
-      failed:
+  failed:
 	DEBUG(1, ("ERROR: async_close\n"));
 	talloc_free(c->io_close);
 	c->io_close = 0;
