@@ -1,3 +1,9 @@
+winexe (1.1~pre1~2912528a63b4a775dbbc64e393fcecb41682b6b8-4~jessie) jessie; urgency=low
+
+  * Recompile against new samba
+
+ -- Nikos Skalkotos <skalkoto@grnet.gr>  Fri, 10 Jun 2016 18:03:24 +0300
+
 winexe (1.1~pre1~2912528a63b4a775dbbc64e393fcecb41682b6b8-3~jessie) jessie; urgency=low
 
   * Recompile against new samba
