@@ -31,7 +31,10 @@ On Debian install dependencies.
         libbsd-dev \            
         zlib1g-dev \
         libc6-dev \
-        python-dev
+        python-dev \
+        libacl1-dev \
+        libldap2-dev \
+        libpam0g-dev
 
 On RedHat-like distros including those in the following list, install
 dependencies.
